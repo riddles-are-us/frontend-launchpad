@@ -74,13 +74,13 @@ const Home = () => {
         <div className="container mx-auto text-center relative z-10">
           <div className="space-y-6 animate-fadeIn">
             <h1 className="text-4xl md:text-6xl font-bold font-mono text-gradient-rainbow animate-glow">
-              zkWASM IDO LAUNCHPAD
+              zkCross Launchpad
             </h1>
             <p className="text-xl md:text-2xl font-mono text-muted-foreground max-w-3xl mx-auto">
               THE ULTIMATE PIXEL-STYLE IDO PLATFORM
             </p>
             <p className="text-lg font-mono text-foreground/80 max-w-2xl mx-auto">
-              Invest in cutting-edge zkWasm projects with USDT. 
+              Invest in cutting-edge zkCross projects with USDT. 
               Dynamic allocation, instant withdrawals, zero fees.
             </p>
             

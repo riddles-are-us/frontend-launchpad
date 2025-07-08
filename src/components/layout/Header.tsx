@@ -17,9 +17,9 @@ const Header = () => {
           {/* Logo */}
           <div className="flex items-center space-x-2">
             <div className="text-2xl font-bold text-gradient-primary animate-glow">
-              zkWASM
+              zkCross
             </div>
-            <div className="text-xl font-mono text-accent">IDO</div>
+            <div className="text-xl font-mono text-accent">Launchpad</div>
           </div>
 
           {/* Navigation */}
