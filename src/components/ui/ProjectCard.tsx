@@ -67,7 +67,7 @@ const ProjectCard = ({ project, className = '', style }: ProjectCardProps) => {
             {project.progress.toFixed(1)}%
           </span>
         </div>
-        <div className="progress-pixel" style={{ '--progress': `${project.progress}%` } as React.CSSProperties}>
+        <div className="progress-pixel" style={{ '--progress': `${Math.min(project.progress, 100)}%` } as React.CSSProperties}>
         </div>
       </div>
 
