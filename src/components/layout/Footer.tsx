@@ -12,7 +12,7 @@ const Footer = () => {
               <div className="text-lg font-mono text-accent">Launchpad</div>
             </div>
             <p className="font-mono text-sm text-muted-foreground">
-              The ultimate pixel-style IDO launchpad powered by zkCross technology
+              The ultimate IDO launchpad powered by zkCross technology
             </p>
           </div>
 
