@@ -2,41 +2,79 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
+/* zkWasm IDO Launchpad - Pixel Style Design System 
+All colors MUST be HSL format. Cyberpunk/Retro gaming aesthetic.
 */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Pixel-style cyberpunk theme - Dark mode primary */
+    --background: 0 0% 8%;                    /* Deep black background */
+    --foreground: 120 100% 90%;               /* Bright neon green text */
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 0 0% 12%;                         /* Dark card background */
+    --card-foreground: 0 0% 95%;              /* Light card text */
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 12%;                      /* Dark popover */
+    --popover-foreground: 0 0% 95%;           /* Light popover text */
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 120 100% 50%;                  /* Neon green primary */
+    --primary-foreground: 0 0% 0%;            /* Black text on green */
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 300 100% 50%;                /* Neon magenta secondary */
+    --secondary-foreground: 0 0% 0%;          /* Black text on magenta */
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 0 0% 20%;                        /* Dark muted background */
+    --muted-foreground: 0 0% 70%;             /* Muted text */
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 180 100% 50%;                   /* Neon cyan accent */
+    --accent-foreground: 0 0% 0%;             /* Black text on cyan */
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 100% 50%;                /* Neon red for errors */
+    --destructive-foreground: 0 0% 100%;      /* White text on red */
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --warning: 60 100% 50%;                   /* Neon yellow for warnings */
+    --warning-foreground: 0 0% 0%;            /* Black text on yellow */
 
-    --radius: 0.5rem;
+    --success: 120 100% 50%;                  /* Neon green for success */
+    --success-foreground: 0 0% 0%;            /* Black text on green */
+
+    --border: 0 0% 25%;                       /* Dark borders */
+    --input: 0 0% 15%;                        /* Dark input background */
+    --ring: 120 100% 50%;                     /* Green focus ring */
+
+    --radius: 0px;                            /* Sharp pixel corners */
+
+    /* Custom pixel-style colors */
+    --pixel-green: 120 100% 50%;              /* #00FF00 */
+    --pixel-magenta: 300 100% 50%;            /* #FF00FF */
+    --pixel-cyan: 180 100% 50%;               /* #00FFFF */
+    --pixel-red: 0 100% 50%;                  /* #FF0000 */
+    --pixel-yellow: 60 100% 50%;              /* #FFFF00 */
+    --pixel-blue: 240 100% 50%;               /* #0000FF */
+
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--pixel-green)), hsl(var(--pixel-cyan)));
+    --gradient-secondary: linear-gradient(135deg, hsl(var(--pixel-magenta)), hsl(var(--pixel-red)));
+    --gradient-rainbow: linear-gradient(90deg, 
+      hsl(var(--pixel-red)), 
+      hsl(var(--pixel-yellow)), 
+      hsl(var(--pixel-green)), 
+      hsl(var(--pixel-cyan)), 
+      hsl(var(--pixel-blue)), 
+      hsl(var(--pixel-magenta))
+    );
+
+    /* Animations */
+    --transition-pixel: all 0.1s steps(3, end);
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* Shadows */
+    --shadow-pixel: 0 0 10px hsl(var(--pixel-green) / 0.5);
+    --shadow-glow: 0 0 20px hsl(var(--primary) / 0.8);
+
+    /* Typography */
+    --font-mono: 'JetBrains Mono', 'Courier New', monospace;
 
     --sidebar-background: 0 0% 98%;
 
@@ -101,5 +139,162 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-mono);
+    overflow-x: hidden;
+  }
+}
+
+@layer components {
+  /* Pixel-style button variants */
+  .btn-pixel {
+    @apply border-2 border-primary bg-transparent px-4 py-2 font-mono text-sm font-semibold uppercase tracking-wider transition-all duration-150;
+    @apply hover:bg-primary hover:text-primary-foreground hover:shadow-[0_0_10px_hsl(var(--primary))] active:scale-95;
+  }
+
+  .btn-pixel-secondary {
+    @apply border-2 border-secondary bg-transparent px-4 py-2 font-mono text-sm font-semibold uppercase tracking-wider transition-all duration-150;
+    @apply hover:bg-secondary hover:text-secondary-foreground hover:shadow-[0_0_10px_hsl(var(--secondary))] active:scale-95;
+  }
+
+  .btn-pixel-accent {
+    @apply border-2 border-accent bg-transparent px-4 py-2 font-mono text-sm font-semibold uppercase tracking-wider transition-all duration-150;
+    @apply hover:bg-accent hover:text-accent-foreground hover:shadow-[0_0_10px_hsl(var(--accent))] active:scale-95;
+  }
+
+  /* Pixel-style card */
+  .card-pixel {
+    @apply relative border-2 border-border bg-card p-6 transition-all duration-300;
+    background: linear-gradient(135deg, hsl(var(--card)), hsl(var(--background)));
+  }
+
+  .card-pixel::before {
+    content: '';
+    @apply absolute inset-0 opacity-0 transition-opacity duration-300;
+    background: var(--gradient-primary);
+    z-index: -1;
+  }
+
+  .card-pixel:hover::before {
+    @apply opacity-10;
+  }
+
+  .card-pixel:hover {
+    @apply shadow-[0_0_20px_hsl(var(--primary)/0.3)] scale-[1.02];
+  }
+
+  /* Pixel-style progress bar */
+  .progress-pixel {
+    @apply relative h-6 w-full border-2 border-border bg-muted;
+  }
+
+  .progress-pixel::before {
+    content: '';
+    @apply absolute left-0 top-0 h-full transition-all duration-500;
+    background: var(--gradient-primary);
+    width: var(--progress, 0%);
+  }
+
+  /* Pixel-style input */
+  .input-pixel {
+    @apply border-2 border-border bg-input px-3 py-2 font-mono text-sm transition-all duration-150;
+    @apply focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20;
+  }
+
+  /* Glow effects */
+  .glow-primary {
+    @apply shadow-[0_0_10px_hsl(var(--primary)/0.5)];
+  }
+
+  .glow-secondary {
+    @apply shadow-[0_0_10px_hsl(var(--secondary)/0.5)];
+  }
+
+  .glow-accent {
+    @apply shadow-[0_0_10px_hsl(var(--accent)/0.5)];
+  }
+
+  /* Text gradients */
+  .text-gradient-primary {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .text-gradient-secondary {
+    background: var(--gradient-secondary);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .text-gradient-rainbow {
+    background: var(--gradient-rainbow);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* Pixel animations */
+  .animate-pixel-pulse {
+    animation: pixel-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  .animate-pixel-bounce {
+    animation: pixel-bounce 1s infinite;
+  }
+
+  .animate-glow {
+    animation: glow 2s ease-in-out infinite alternate;
+  }
+}
+
+@layer utilities {
+  /* Custom utility classes */
+  .font-pixel {
+    font-family: var(--font-mono);
+  }
+
+  .transition-pixel {
+    transition: var(--transition-pixel);
+  }
+
+  .transition-smooth {
+    transition: var(--transition-smooth);
+  }
+}
+
+@keyframes pixel-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes pixel-bounce {
+  0%, 20%, 53%, 80%, 100% {
+    transform: translate3d(0, 0, 0);
+  }
+  40%, 43% {
+    transform: translate3d(0, -8px, 0);
+  }
+  70% {
+    transform: translate3d(0, -4px, 0);
+  }
+  90% {
+    transform: translate3d(0, -2px, 0);
+  }
+}
+
+@keyframes glow {
+  from {
+    filter: drop-shadow(0 0 5px hsl(var(--primary)));
+  }
+  to {
+    filter: drop-shadow(0 0 20px hsl(var(--primary))) drop-shadow(0 0 35px hsl(var(--primary)));
   }
 }
