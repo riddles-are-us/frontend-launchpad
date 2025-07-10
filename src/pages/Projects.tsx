@@ -1,98 +1,117 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Layout from "@/components/layout/Layout";
 import ProjectCard from "@/components/ui/ProjectCard";
+import { useProjects, useInvestment, useLaunchpad } from "@/contexts/LaunchpadContext";
+import { getPublicProjects, type IdoProjectData } from "@/services/api";
+import { toast } from "@/hooks/use-toast";
 
-// Mock data for projects
-const mockProjects = [
-  {
-    projectId: "1",
-    projectName: "DeFi Protocol X",
-    tokenSymbol: "DPX",
-    targetAmount: "500000",
-    totalRaised: "425000",
-    totalInvestors: "324",
-    startTime: "2024-01-15",
-    endTime: "2024-01-22",
-    status: 'ACTIVE' as const,
-    isOverSubscribed: false,
-    progress: 85
-  },
-  {
-    projectId: "2", 
-    projectName: "Gaming Metaverse",
-    tokenSymbol: "GMETA",
-    targetAmount: "750000",
-    totalRaised: "892000", 
-    totalInvestors: "567",
-    startTime: "2024-01-10",
-    endTime: "2024-01-20",
-    status: 'ACTIVE' as const,
-    isOverSubscribed: true,
-    progress: 119
-  },
-  {
-    projectId: "3",
-    projectName: "AI Trading Bot",
-    tokenSymbol: "AIBOT",
-    targetAmount: "300000",
-    totalRaised: "0",
-    totalInvestors: "0", 
-    startTime: "2024-01-25",
-    endTime: "2024-02-01",
-    status: 'PENDING' as const,
-    isOverSubscribed: false,
-    progress: 0
-  },
-  {
-    projectId: "4",
-    projectName: "NFT Marketplace",
-    tokenSymbol: "NFTMP",
-    targetAmount: "1000000",
-    totalRaised: "1000000",
-    totalInvestors: "892",
-    startTime: "2024-01-01",
-    endTime: "2024-01-08",
-    status: 'ENDED' as const,
-    isOverSubscribed: false,
-    progress: 100
-  },
-  {
-    projectId: "5",
-    projectName: "Cross-Chain Bridge",
-    tokenSymbol: "BRIDGE",
-    targetAmount: "600000",
-    totalRaised: "234000",
-    totalInvestors: "156",
-    startTime: "2024-01-12",
-    endTime: "2024-01-19",
-    status: 'ACTIVE' as const,
-    isOverSubscribed: false,
-    progress: 39
-  },
-  {
-    projectId: "6",
-    projectName: "Yield Optimizer",
-    tokenSymbol: "YIELD",
-    targetAmount: "800000",
-    totalRaised: "0",
-    totalInvestors: "0",
-    startTime: "2024-02-01",
-    endTime: "2024-02-08",
-    status: 'PENDING' as const,
-    isOverSubscribed: false,
-    progress: 0
-  }
-];
+// Projects page now uses real data from LaunchpadContext
 
 const Projects = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [sortBy, setSortBy] = useState("NEWEST");
+  const [publicProjects, setPublicProjects] = useState<IdoProjectData[]>([]);
+  const [publicLoading, setPublicLoading] = useState(false);
+  const [publicError, setPublicError] = useState<string | null>(null);
 
-  const filteredProjects = mockProjects.filter(project => {
+  // Use launchpad context hooks
+  const { isConnected, loading, error, refreshData } = useLaunchpad();
+  const { projects } = useProjects();
+  const { invest, transaction } = useInvestment();
+
+  // Load public projects when not connected
+  useEffect(() => {
+    if (!isConnected) {
+      const loadPublicProjects = async () => {
+        setPublicLoading(true);
+        setPublicError(null);
+        try {
+          console.log('Loading public projects...');
+          const publicProjectsData = await getPublicProjects();
+          console.log('Public projects loaded:', publicProjectsData);
+          setPublicProjects(publicProjectsData);
+        } catch (err) {
+          console.error('Failed to load public projects:', err);
+          setPublicError(err instanceof Error ? err.message : 'Failed to load projects');
+        } finally {
+          setPublicLoading(false);
+        }
+      };
+      
+      loadPublicProjects();
+    }
+  }, [isConnected]);
+
+  // Debug: log projects data
+  console.log('Projects page - Raw projects data:', projects);
+  console.log('Projects page - Public projects data:', publicProjects);
+  console.log('Projects page - isConnected:', isConnected);
+  console.log('Projects page - loading:', loading);
+  console.log('Projects page - error:', error);
+
+  // Handle investment
+  const handleInvest = async (projectId: string, amount: string) => {
+    if (!isConnected) {
+      toast({
+        title: "Wallet Required",
+        description: "Please connect your wallet to invest in projects",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      await invest(projectId, amount);
+      toast({
+        title: "Success",
+        description: "Investment successful!",
+      });
+      await refreshData(); // Refresh projects data
+    } catch (error) {
+      toast({
+        title: "Error", 
+        description: "Failed to invest in project",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Use connected user projects or public projects
+  const allProjects = isConnected && projects.length > 0 
+    ? projects.map(project => ({
+        projectId: project.projectId,
+        projectName: project.projectName || `${project.tokenSymbol} Project`,
+        tokenSymbol: project.tokenSymbol,
+        description: project.description || "Example project description",
+        targetAmount: project.targetAmount,
+        totalRaised: project.totalRaised,
+        totalInvestors: project.totalInvestors,
+        startTime: new Date(Number(project.startTime) * 1000).toISOString().split('T')[0],
+        endTime: new Date(Number(project.endTime) * 1000).toISOString().split('T')[0],
+        status: project.status,
+        isOverSubscribed: project.isOverSubscribed,
+        progress: project.progress
+      }))
+    : publicProjects.map(project => ({
+        projectId: project.projectId,
+        projectName: project.projectName || `${project.tokenSymbol} Project`,
+        tokenSymbol: project.tokenSymbol,
+        description: project.description || "Example project description",
+        targetAmount: project.targetAmount,
+        totalRaised: project.totalRaised,
+        totalInvestors: project.totalInvestors,
+        startTime: new Date(Number(project.startTime) * 1000).toISOString().split('T')[0],
+        endTime: new Date(Number(project.endTime) * 1000).toISOString().split('T')[0],
+        status: project.status,
+        isOverSubscribed: project.isOverSubscribed,
+        progress: project.progress
+      }));
+
+  const filteredProjects = allProjects.filter(project => {
     const matchesSearch = project.projectName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          project.tokenSymbol.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "ALL" || project.status === statusFilter;
@@ -111,6 +130,42 @@ const Projects = () => {
         return new Date(b.startTime).getTime() - new Date(a.startTime).getTime();
     }
   });
+
+  // Show loading state
+  if ((isConnected && loading) || (!isConnected && publicLoading)) {
+    return (
+      <Layout>
+        <div className="min-h-screen bg-background py-8">
+          <div className="container mx-auto px-4">
+            <div className="flex items-center justify-center min-h-[400px]">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                <p className="text-muted-foreground font-mono">Loading projects...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  // Show error state
+  if ((isConnected && error) || (!isConnected && publicError)) {
+    return (
+      <Layout>
+        <div className="min-h-screen bg-background py-8">
+          <div className="container mx-auto px-4">
+            <div className="flex items-center justify-center min-h-[400px]">
+              <div className="text-center">
+                <p className="text-destructive font-mono mb-4">Error: {error || publicError}</p>
+                <Button onClick={() => refreshData()}>Retry</Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -249,6 +304,7 @@ const Projects = () => {
                 project={project}
                 className="animate-fadeIn"
                 style={{ animationDelay: `${index * 0.05}s` }}
+                onInvest={handleInvest}
               />
             ))}
           </div>

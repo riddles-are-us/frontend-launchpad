@@ -2,13 +2,69 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="192x192" href="/logo192.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>zkCross Launchpad</title>
-    <meta name="description" content="The ultimate IDO launchpad powered by zkCross technology" />
-    <meta name="author" content="zkCross Labs" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>MEME Prediction Market (powered by ZKWASM)</title>
+    <meta name="description" content="MEME Prediction Market - Decentralized AMM-based prediction market powered by ZKWASM" />
+
+    <!-- Polyfills for Node.js globals in browser -->
+    <script>
+      if (typeof global === 'undefined') {
+        var global = globalThis;
+      }
+      if (typeof process === 'undefined') {
+        var process = {
+          env: {},
+          version: '',
+          browser: true
+        };
+      }
+             if (typeof Buffer === 'undefined') {
+         // Complete Buffer constructor polyfill
+         function Buffer(data, encoding) {
+           if (!(this instanceof Buffer)) {
+             return new Buffer(data, encoding);
+           }
+           if (typeof data === 'number') {
+             return new Uint8Array(data);
+           }
+           if (typeof data === 'string') {
+             return new TextEncoder().encode(data);
+           }
+           return new Uint8Array(data || 0);
+         }
+         
+         Buffer.from = function(data, encoding) {
+           if (typeof data === 'string') {
+             return new TextEncoder().encode(data);
+           }
+           return new Uint8Array(data);
+         };
+         
+         Buffer.alloc = function(size, fill) {
+           return new Uint8Array(size);
+         };
+         
+         Buffer.isBuffer = function(obj) {
+           return obj instanceof Uint8Array;
+         };
+         
+         Buffer.concat = function(buffers) {
+           const total = buffers.reduce((sum, buf) => sum + buf.length, 0);
+           const result = new Uint8Array(total);
+           let offset = 0;
+           for (const buf of buffers) {
+             result.set(buf, offset);
+             offset += buf.length;
+           }
+           return result;
+         };
+         
+         window.Buffer = Buffer;
+         global.Buffer = Buffer;
+       }
+    </script>
   </head>
 
   <body>

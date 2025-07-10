@@ -1,13 +1,39 @@
-import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { useWallet } from "@/contexts/WalletContext";
+import { useConnectModal } from "zkwasm-minirollup-browser";
+import { Wallet } from "lucide-react";
 
 const Header = () => {
-  const [isConnected, setIsConnected] = useState(false);
   const location = useLocation();
+  const walletContext = useWallet();
+  const { isConnected, isL2Connected, l1Account, l2Account, connectL2 } = walletContext;
+  const { openConnectModal } = useConnectModal();
 
-  const handleConnectWallet = () => {
-    setIsConnected(!isConnected);
+  // Format address for display
+  const formatAddress = (address: string) => {
+    return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
+  };
+
+  // Handle wallet connection
+  const handleWalletClick = async () => {
+    try {
+      if (!isConnected) {
+        // 如果L1未连接，打开连接模态框
+        console.log('Opening wallet connect modal...');
+        openConnectModal?.();
+      } else if (!isL2Connected) {
+        // 如果L1已连接但L2未连接，连接L2
+        console.log('Connecting L2 account...');
+        await connectL2();
+      } else {
+        // 已经完全连接
+        console.log('Wallet already fully connected');
+      }
+    } catch (error) {
+      console.error('Failed to connect wallet:', error);
+    }
   };
 
   return (
@@ -48,27 +74,30 @@ const Header = () => {
             >
               Dashboard
             </Link>
+
           </nav>
 
           {/* Wallet Connection */}
           <div className="flex items-center space-x-4">
-            {isConnected && (
-              <div className="hidden md:flex items-center space-x-2 px-3 py-1 border border-primary/30 bg-primary/10">
-                <div className="w-2 h-2 rounded-full bg-primary animate-pixel-pulse"></div>
-                <span className="font-mono text-xs text-primary">1,250.50 USDT</span>
+            {isConnected && l1Account && (
+              <div className="hidden md:flex items-center space-x-2">
+                <Badge variant="default" className="font-mono text-xs">
+                  {formatAddress(l1Account.ethAddress)}
+                </Badge>
               </div>
             )}
             
             <Button
-              onClick={handleConnectWallet}
               variant="outline"
+              onClick={handleWalletClick}
               className={`btn-pixel font-mono ${
-                isConnected 
+                isConnected && isL2Connected
                   ? 'border-success text-success hover:bg-success hover:text-success-foreground' 
                   : 'border-primary text-primary hover:bg-primary hover:text-primary-foreground'
               }`}
             >
-              {isConnected ? 'CONNECTED' : 'CONNECT WALLET'}
+              <Wallet className="h-4 w-4 mr-2" />
+              {isConnected && isL2Connected ? 'CONNECTED' : 'CONNECT WALLET'}
             </Button>
           </div>
         </div>

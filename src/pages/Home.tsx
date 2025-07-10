@@ -1,60 +1,19 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import StatCard from "@/components/ui/StatCard";
 import ProjectCard from "@/components/ui/ProjectCard";
-
-// Mock data for demonstration
-const mockStats = {
-  totalProjects: "24",
-  totalRaised: "15.2M",
-  activeInvestors: "3,847",
-  avgRoi: "+245%"
-};
-
-const mockFeaturedProjects = [
-  {
-    projectId: "1",
-    projectName: "DeFi Protocol X",
-    tokenSymbol: "DPX",
-    targetAmount: "500000",
-    totalRaised: "425000",
-    totalInvestors: "324",
-    startTime: "2024-01-15",
-    endTime: "2024-01-22",
-    status: 'ACTIVE' as const,
-    isOverSubscribed: false,
-    progress: 85
-  },
-  {
-    projectId: "2", 
-    projectName: "Gaming Metaverse",
-    tokenSymbol: "GMETA",
-    targetAmount: "750000",
-    totalRaised: "892000", 
-    totalInvestors: "567",
-    startTime: "2024-01-10",
-    endTime: "2024-01-20",
-    status: 'ACTIVE' as const,
-    isOverSubscribed: true,
-    progress: 119
-  },
-  {
-    projectId: "3",
-    projectName: "AI Trading Bot",
-    tokenSymbol: "AIBOT",
-    targetAmount: "300000",
-    totalRaised: "0",
-    totalInvestors: "0", 
-    startTime: "2024-01-25",
-    endTime: "2024-02-01",
-    status: 'PENDING' as const,
-    isOverSubscribed: false,
-    progress: 0
-  }
-];
+import { useProjects, useLaunchpad } from "@/contexts/LaunchpadContext";
+import { getPublicProjects, type IdoProjectData } from "@/services/api";
 
 const Home = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
+  const navigate = useNavigate();
+  const [publicProjects, setPublicProjects] = useState<IdoProjectData[]>([]);
+  
+  // Use real data from LaunchpadContext
+  const { projects } = useProjects();
+  const { isConnected, loading } = useLaunchpad();
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -62,6 +21,49 @@ const Home = () => {
     }, 1000);
     return () => clearInterval(timer);
   }, []);
+
+  // Load public projects when not connected
+  useEffect(() => {
+    if (!isConnected) {
+      const loadPublicProjects = async () => {
+        try {
+          const publicProjectsData = await getPublicProjects();
+          setPublicProjects(publicProjectsData);
+        } catch (err) {
+          console.error('Failed to load public projects for home:', err);
+        }
+      };
+      
+      loadPublicProjects();
+    }
+  }, [isConnected]);
+
+  // Use connected user projects or public projects
+  const activeProjects = isConnected && projects.length > 0 ? projects : publicProjects;
+
+  // Calculate stats from real data
+  const stats = {
+    totalProjects: activeProjects.length.toString(),
+    totalRaised: activeProjects.reduce((sum, p) => sum + parseFloat(p.totalRaised || "0"), 0).toLocaleString(),
+    activeInvestors: activeProjects.reduce((sum, p) => sum + parseInt(p.totalInvestors || "0"), 0).toLocaleString(),
+    avgRoi: activeProjects.length > 0 ? "+145%" : "0%" // Placeholder calculation
+  };
+
+  // Get featured projects (first 3 projects)
+  const featuredProjects = activeProjects.slice(0, 3).map(project => ({
+    projectId: project.projectId,
+    projectName: project.projectName || `${project.tokenSymbol} Project`,
+    tokenSymbol: project.tokenSymbol,
+    description: project.description || "Example project description",
+    targetAmount: project.targetAmount,
+    totalRaised: project.totalRaised,
+    totalInvestors: project.totalInvestors,
+    startTime: new Date(Number(project.startTime) * 1000).toISOString().split('T')[0],
+    endTime: new Date(Number(project.endTime) * 1000).toISOString().split('T')[0],
+    status: project.status,
+    isOverSubscribed: project.isOverSubscribed,
+    progress: project.progress
+  }));
 
   return (
     <div className="min-h-screen bg-background">
@@ -86,11 +88,17 @@ const Home = () => {
             
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-8">
-              <Button className="btn-pixel text-lg px-8 py-3">
+              <Button 
+                className="btn-pixel text-lg px-8 py-3"
+                onClick={() => navigate('/projects')}
+              >
                 EXPLORE PROJECTS
               </Button>
-              <Button className="btn-pixel-secondary text-lg px-8 py-3">
-                CONNECT WALLET
+              <Button 
+                className="btn-pixel-secondary text-lg px-8 py-3"
+                onClick={() => navigate('/dashboard')}
+              >
+                ENTER DASHBOARD
               </Button>
             </div>
           </div>
@@ -119,28 +127,28 @@ const Home = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <StatCard
               title="Total Projects"
-              value={mockStats.totalProjects}
+              value={stats.totalProjects}
               change="+3 this week"
               changeType="positive"
               className="animate-fadeIn"
             />
             <StatCard
               title="Total Raised"
-              value={`$${mockStats.totalRaised}`}
+              value={`$${stats.totalRaised}`}
               change="+12.5% this month"
               changeType="positive" 
               className="animate-fadeIn"
             />
             <StatCard
               title="Active Investors"
-              value={mockStats.activeInvestors}
+              value={stats.activeInvestors}
               change="+234 this week"
               changeType="positive"
               className="animate-fadeIn"
             />
             <StatCard
               title="Average ROI"
-              value={mockStats.avgRoi}
+              value={stats.avgRoi}
               change="Last 30 days"
               changeType="positive"
               className="animate-fadeIn"
@@ -162,7 +170,7 @@ const Home = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {mockFeaturedProjects.map((project, index) => (
+            {featuredProjects.map((project, index) => (
               <ProjectCard
                 key={project.projectId}
                 project={project}
@@ -173,7 +181,10 @@ const Home = () => {
           </div>
 
           <div className="text-center mt-12">
-            <Button className="btn-pixel-accent text-lg px-8 py-3">
+            <Button 
+              className="btn-pixel-accent text-lg px-8 py-3"
+              onClick={() => navigate('/projects')}
+            >
               VIEW ALL PROJECTS
             </Button>
           </div>
