@@ -22,6 +22,16 @@ interface LaunchpadProviderProps {
     };
 }
 
+// Add interface for player state from RPC query
+interface PlayerStateData {
+    balance: string;
+    nonce: string;
+}
+
+interface GlobalPlayerState {
+    data: PlayerStateData;
+}
+
 const LaunchpadContext = createContext<LaunchpadContextType | undefined>(undefined);
 
 export const LaunchpadProvider: React.FC<LaunchpadProviderProps> = ({ children, config }) => {
@@ -37,6 +47,7 @@ export const LaunchpadProvider: React.FC<LaunchpadProviderProps> = ({ children, 
     });
     const [playerInstalled, setPlayerInstalled] = useState(false);
     const [apiInitializing, setApiInitializing] = useState(false);
+    const [userBalance, setUserBalance] = useState<string>("0"); // Add user balance state
 
     // Use wallet context from zkWasm SDK
     const walletData = useWallet();
@@ -225,6 +236,52 @@ export const LaunchpadProvider: React.FC<LaunchpadProviderProps> = ({ children, 
             console.log('LaunchpadContext: Received projects:', allProjects);
             setProjects(allProjects);
 
+            let currentBalance = "0.00";
+
+            // Query user balance using RPC if L2 account is available
+            if (l2Account && l2Account.getPrivateKey) {
+                try {
+                    console.log('LaunchpadContext: Querying user balance via RPC...');
+                    const rpcResponse: any = await api.rpc.queryState(l2Account.getPrivateKey());
+                    console.log('LaunchpadContext: RPC response:', rpcResponse);
+                    
+                    if (rpcResponse && rpcResponse.success && rpcResponse.data) {
+                        // Parse the JSON string in the data field
+                        const parsedData = JSON.parse(rpcResponse.data);
+                        console.log('LaunchpadContext: Parsed RPC data:', parsedData);
+                        
+                        if (parsedData.player && parsedData.player.data && parsedData.player.data.balance) {
+                            // Convert balance from smallest unit to USDT (assuming 6 decimals)
+                            const balanceRaw = BigInt(parsedData.player.data.balance);
+                            const balanceUSDT = (Number(balanceRaw) / 1e6).toFixed(2);
+                            currentBalance = balanceUSDT;
+                            setUserBalance(balanceUSDT);
+                            console.log('LaunchpadContext: Updated user balance:', balanceUSDT, 'USDT');
+                        } else {
+                            console.log('LaunchpadContext: No player balance found in RPC response');
+                            setUserBalance("0.00");
+                        }
+                        
+                        // Extract global state information for potential future use
+                        if (parsedData.state) {
+                            console.log('LaunchpadContext: Global state:', {
+                                counter: parsedData.state.counter,
+                                totalPlayers: parsedData.state.total_players,
+                                totalProjects: parsedData.state.total_projects
+                            });
+                        }
+                    } else {
+                        console.log('LaunchpadContext: Invalid RPC response structure');
+                        setUserBalance("0.00");
+                    }
+                } catch (balanceError) {
+                    console.warn('LaunchpadContext: Failed to query balance via RPC:', balanceError);
+                    setUserBalance("0.00");
+                }
+            } else {
+                setUserBalance("0.00");
+            }
+
             // Only fetch user data if player is fully connected
             if (playerId && isConnected && l2Account) {
                 console.log('LaunchpadContext: Fetching user data for playerId:', playerId);
@@ -238,21 +295,58 @@ export const LaunchpadProvider: React.FC<LaunchpadProviderProps> = ({ children, 
                     ]);
 
                     setUserPositions(positions);
-                    setUserStats(stats);
+                    
+                    // Update stats with real balance from RPC
+                    if (stats) {
+                        const updatedStats = {
+                            ...stats,
+                            balance: currentBalance // Use current balance from this refresh
+                        };
+                        setUserStats(updatedStats);
+                    } else {
+                        // Create stats with balance if none exist
+                        setUserStats({
+                            balance: currentBalance,
+                            totalInvested: "0",
+                            totalTokens: "0", 
+                            totalProjects: "0",
+                            portfolioValue: "0",
+                            unrealizedGains: "0"
+                        });
+                    }
+                    
                     setTransactionHistory(history);
                     console.log('LaunchpadContext: User data refresh completed successfully');
                 } catch (userDataError) {
                     console.warn('LaunchpadContext: Failed to fetch user data (user may not have any data yet):', userDataError);
-                    // Set empty defaults for user data
+                    // Set empty defaults for user data but keep the balance
                     setUserPositions([]);
-                    setUserStats(null);
+                    setUserStats({
+                        balance: currentBalance,
+                        totalInvested: "0",
+                        totalTokens: "0",
+                        totalProjects: "0", 
+                        portfolioValue: "0",
+                        unrealizedGains: "0"
+                    });
                     setTransactionHistory([]);
                 }
             } else {
                 console.log('LaunchpadContext: Skipping user data fetch - user not fully connected');
-                // Reset user data when not connected
+                // Reset user data when not connected but keep the balance if available
                 setUserPositions([]);
-                setUserStats(null);
+                if (currentBalance !== "0.00") {
+                    setUserStats({
+                        balance: currentBalance,
+                        totalInvested: "0",
+                        totalTokens: "0",
+                        totalProjects: "0",
+                        portfolioValue: "0", 
+                        unrealizedGains: "0"
+                    });
+                } else {
+                    setUserStats(null);
+                }
                 setTransactionHistory([]);
             }
 
@@ -263,7 +357,7 @@ export const LaunchpadProvider: React.FC<LaunchpadProviderProps> = ({ children, 
                 setError(err instanceof Error ? err.message : 'Failed to refresh data');
             }
         }
-    }, [api, playerId, isConnected, l2Account]);
+    }, [api, playerId, isConnected, l2Account]); // Removed userBalance from dependencies
 
     // Disconnect and cleanup
     const disconnect = useCallback(() => {

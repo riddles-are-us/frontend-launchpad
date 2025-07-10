@@ -147,6 +147,10 @@ const Dashboard = () => {
 
   // Use real data from API or fallback to empty data
   const dashboardStats = userStats || fallbackUserData;
+  console.log('Dashboard: userStats:', userStats);
+  console.log('Dashboard: dashboardStats:', dashboardStats);
+  console.log('Dashboard: balance value:', dashboardStats.balance);
+  
   const portfolioProjects = positions.map(position => ({
     projectId: position.projectId,
     tokenSymbol: position.tokenSymbol,
