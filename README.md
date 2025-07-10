@@ -1,4 +1,4 @@
-# Pixel Launchpad IDO
+# Launchpad Frontend
 
 A modern IDO (Initial DEX Offering) launchpad platform built with React, TypeScript, and integrated with zkWasm-minirollup backend.
 
@@ -13,7 +13,7 @@ A modern IDO (Initial DEX Offering) launchpad platform built with React, TypeScr
 
 ## API Integration
 
-This project integrates with the [zkwasm-launchpad](../zkwasm-launchpad) backend API to provide:
+This project integrates with the zkwasm-launchpad backend API to provide:
 
 ### Core Functionality
 - **Player Management**: Automatic player registration and management
@@ -112,7 +112,7 @@ export const API_CONFIG = {
 1. Clone the repository:
 ```bash
 git clone <repository-url>
-cd pixel-launchpad-ido
+cd frontend-launchpad
 ```
 
 2. Install dependencies:
@@ -135,7 +135,7 @@ npm run dev
 bun dev
 ```
 
-5. Open http://localhost:5173 in your browser
+5. Open http://localhost:8080 in your browser
 
 ### Backend Setup
 
@@ -207,45 +207,6 @@ function ProjectsList() {
   );
 }
 ```
-
-### Direct API Usage
-
-```typescript
-import { createLaunchpadAPI } from '@/services/api';
-
-const api = createLaunchpadAPI({
-  serverUrl: 'http://localhost:3000',
-  privkey: 'your-private-key'
-});
-
-// Get all projects
-const projects = await api.getAllProjects();
-
-// Invest in a project
-await api.investInProject(BigInt(1), BigInt(1000 * 1e6)); // 1000 USDT
-
-// Get user positions
-const positions = await api.getUserAllPositions('pid1', 'pid2');
-```
-
-## Dependencies
-
-### Core Dependencies
-- **React 18**: UI framework
-- **TypeScript**: Type safety
-- **Vite**: Build tool and dev server
-- **Tailwind CSS**: Styling framework
-- **Radix UI**: Accessible UI components
-
-### zkWasm Integration
-- **zkwasm-minirollup-rpc**: RPC client for zkWasm backend
-- **zkwasm-minirollup-browser**: Browser utilities for zkWasm
-- **zkwasm-service-helper**: Helper utilities for zkWasm services
-
-### State Management
-- **React Context**: Global state management
-- **TanStack Query**: Server state management and caching
-
 ## Contributing
 
 1. Fork the repository
