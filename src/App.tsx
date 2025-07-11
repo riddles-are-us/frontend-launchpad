@@ -20,7 +20,7 @@ const launchpadConfig = {
 };
 
 const App = () => (
-  <DelphinusReactProvider appName="ZKWASM-IDO-LAUNCHPAD">
+  <DelphinusReactProvider appName="ZKCROSS-LAUNCHPAD">
     <QueryClientProvider client={queryClient}>
       <LaunchpadProvider config={launchpadConfig}>
         <TooltipProvider>
