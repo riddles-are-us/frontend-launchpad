@@ -6,14 +6,24 @@ import ProjectCard from "@/components/ui/ProjectCard";
 import { useProjects, useLaunchpad } from "@/contexts/LaunchpadContext";
 import { getPublicProjects, type IdoProjectData } from "@/services/api";
 
+interface ActivityItem {
+  user: string;
+  action: string;
+  project: string;
+  amount: string;
+  time: string;
+  timestamp: number; // Counter value, not milliseconds
+}
+
 const Home = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const navigate = useNavigate();
   const [publicProjects, setPublicProjects] = useState<IdoProjectData[]>([]);
+  const [liveActivity, setLiveActivity] = useState<ActivityItem[]>([]);
   
   // Use real data from LaunchpadContext
   const { projects } = useProjects();
-  const { isConnected, loading, globalCounter } = useLaunchpad();
+  const { isConnected, loading, globalCounter, api } = useLaunchpad();
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -37,6 +47,94 @@ const Home = () => {
       loadPublicProjects();
     }
   }, [isConnected]);
+
+  // Load live activity data
+  useEffect(() => {
+    const loadLiveActivity = async () => {
+      if (!api) return;
+      
+      try {
+        const allProjectsData = isConnected && projects.length > 0 ? projects : publicProjects;
+        const activeProjects = allProjectsData.filter(project => project.status === 'ACTIVE');
+        
+        let projectsToQuery = activeProjects;
+        
+        // If no active projects, find the ended project with latest end time
+        if (activeProjects.length === 0) {
+          const endedProjects = allProjectsData.filter(project => project.status === 'ENDED');
+          if (endedProjects.length > 0) {
+            // Sort by endTime descending (latest end time first) and take the first one
+            const latestEndedProject = endedProjects.sort((a, b) => parseInt(b.endTime) - parseInt(a.endTime))[0];
+            projectsToQuery = [latestEndedProject];
+          } else {
+            // No projects at all
+            setLiveActivity([]);
+            return;
+          }
+        }
+
+        // Get investment history for projects to query
+        const allInvestments = [];
+        for (const project of projectsToQuery.slice(0, 3)) { // Limit to 3 projects for performance
+          try {
+            const investments = await api.getProjectInvestments(project.projectId);
+            const formattedInvestments = investments.map(investment => ({
+              user: `${investment.pid[0]?.slice(-4) || '????'}...${investment.pid[1]?.slice(-4) || '????'}`,
+              action: "invested",
+              project: project.tokenSymbol,
+              amount: `${new Intl.NumberFormat('en-US').format(parseFloat(investment.amount))} USDT`,
+              time: formatTimeAgo(parseInt(investment.timestamp)), // timestamp is counter value
+              timestamp: parseInt(investment.timestamp) // Keep as counter for sorting
+            }));
+            allInvestments.push(...formattedInvestments);
+          } catch (error) {
+            console.warn(`Failed to load investments for project ${project.projectId}:`, error);
+          }
+        }
+
+        // Sort by counter (newest first = higher counter) and take top 4
+        const sortedActivity = allInvestments
+          .sort((a, b) => b.timestamp - a.timestamp) // Higher counter = more recent
+          .slice(0, 4);
+        
+        setLiveActivity(sortedActivity);
+      } catch (error) {
+        console.error('Failed to load live activity:', error);
+        // Keep existing activity or use fallback
+      }
+    };
+
+    loadLiveActivity();
+    
+    // Refresh live activity every 30 seconds
+    const interval = setInterval(loadLiveActivity, 30000);
+    return () => clearInterval(interval);
+  }, [api, projects, publicProjects, isConnected]);
+
+  // Helper function to format time ago using global counter
+  const formatTimeAgo = (investmentCounter: number): string => {
+    if (!globalCounter || globalCounter === 0) {
+      // Fallback to estimate if no global counter available
+      const now = Math.floor(Date.now() / 1000);
+      const estimatedCurrentCounter = Math.floor(now / 5);
+      const diff = (estimatedCurrentCounter - investmentCounter) * 5;
+      
+      if (diff < 60) return `${diff}s ago`;
+      if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+      if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+      return `${Math.floor(diff / 86400)}d ago`;
+    }
+    
+    // Use real global counter: (current counter - investment counter) * 5 = seconds ago
+    const counterDiff = globalCounter - investmentCounter;
+    const secondsAgo = counterDiff * 5;
+    
+    if (secondsAgo < 0) return "just now"; // Future investment (shouldn't happen)
+    if (secondsAgo < 60) return `${secondsAgo}s ago`;
+    if (secondsAgo < 3600) return `${Math.floor(secondsAgo / 60)}m ago`;
+    if (secondsAgo < 86400) return `${Math.floor(secondsAgo / 3600)}h ago`;
+    return `${Math.floor(secondsAgo / 86400)}d ago`;
+  };
 
   // Use connected user projects or public projects
   const activeProjects = isConnected && projects.length > 0 ? projects : publicProjects;
@@ -82,11 +180,11 @@ const Home = () => {
               zkCross Launchpad
             </h1>
             <p className="text-xl md:text-2xl font-mono text-muted-foreground max-w-3xl mx-auto">
-              THE ULTIMATE IDO PLATFORM
+              THE ULTIMATE IDO PLATFORM Built with ZKWASM
             </p>
             <p className="text-lg font-mono text-foreground/80 max-w-2xl mx-auto">
-              Invest in cutting-edge zkCross projects with USDT. 
-              Dynamic allocation, instant withdrawals, zero fees.
+              Invest in cutting-edge Web3 projects with USDT. 
+              Dynamic allocation, fair withdrawals, zero fees.
             </p>
             
             {/* CTA Buttons */}
@@ -208,19 +306,14 @@ const Home = () => {
           </div>
 
           <div className="max-w-2xl mx-auto space-y-4">
-            {[
-              { user: "0x1234...5678", action: "invested 1,250 USDT in", project: "DPX", time: "2m ago" },
-              { user: "0x9abc...def0", action: "withdrew tokens from", project: "GMETA", time: "5m ago" },
-              { user: "0x2468...ace1", action: "invested 500 USDT in", project: "DPX", time: "7m ago" },
-              { user: "0xbeef...cafe", action: "invested 2,000 USDT in", project: "GMETA", time: "12m ago" }
-            ].map((activity, index) => (
+            {liveActivity.length > 0 ? liveActivity.map((activity, index) => (
               <div key={index} className="card-pixel p-4 animate-slideInRight" style={{ animationDelay: `${index * 0.1}s` } as React.CSSProperties}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <div className="w-2 h-2 bg-primary rounded-full animate-pixel-pulse"></div>
                     <div className="font-mono text-sm">
                       <span className="text-accent">{activity.user}</span>
-                      <span className="text-muted-foreground"> {activity.action} </span>
+                      <span className="text-muted-foreground"> {activity.action} {activity.amount} in </span>
                       <span className="text-primary font-semibold">{activity.project}</span>
                     </div>
                   </div>
@@ -229,7 +322,14 @@ const Home = () => {
                   </div>
                 </div>
               </div>
-            ))}
+            )) : (
+              <div className="text-center py-8">
+                <div className="w-8 h-8 bg-muted rounded-full mx-auto mb-4 animate-pixel-pulse"></div>
+                <p className="font-mono text-sm text-muted-foreground">
+                  {api ? "No recent investment activity" : "Loading live activity..."}
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -241,7 +341,7 @@ const Home = () => {
             <div className="flex items-center space-x-4 mb-4 md:mb-0">
               <div className="flex items-center space-x-2">
                 <div className="w-3 h-3 bg-success rounded-full animate-pixel-pulse"></div>
-                <span className="font-mono text-sm text-success">MAINNET LIVE</span>
+                <span className="font-mono text-sm text-success">TESTNET LIVE</span>
               </div>
               <div className="flex items-center space-x-2">
                 <div className="w-3 h-3 bg-primary rounded-full animate-pixel-pulse"></div>

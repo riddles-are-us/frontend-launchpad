@@ -2,6 +2,14 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { 
+  Pagination, 
+  PaginationContent, 
+  PaginationItem, 
+  PaginationLink, 
+  PaginationNext, 
+  PaginationPrevious 
+} from "@/components/ui/pagination";
 import Layout from "@/components/layout/Layout";
 import StatCard from "@/components/ui/StatCard";
 import { useUserPortfolio, useInvestment, useLaunchpad } from "@/contexts/LaunchpadContext";
@@ -16,16 +24,42 @@ const fallbackUserData = {
   totalTokens: "0",
   totalProjects: "0",
   portfolioValue: "0.00",
-  unrealizedGains: "0.00"
+  unrealizedGains: "No gains/losses"
 };
+
+// Extended portfolio project interface
+interface PortfolioProject {
+  projectId: string;
+  tokenSymbol: string;
+  projectName: string;
+  invested: string;
+  tokensOwned: string;
+  currentValue: string;
+  status: 'PENDING' | 'ACTIVE' | 'ENDED';
+  canWithdraw: boolean;
+  gainLoss: string;
+  gainLossPercent: string;
+  isOverSubscribed: boolean;
+  refundAmount: string;
+}
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("portfolio");
   const [withdrawAmount, setWithdrawAmount] = useState("");
-  const [withdrawAddress, setWithdrawAddress] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  const [, forceUpdate] = useState({});
+
+  // Update time display every 5 seconds to match counter updates
+  useEffect(() => {
+    const interval = setInterval(() => {
+      forceUpdate({});
+    }, 5000); // Update every 5 seconds (1 counter = 5 seconds)
+    return () => clearInterval(interval);
+  }, []);
   
   // Use launchpad context hooks
-  const { isConnected, userStats, loading, error, withdrawUsdt } = useLaunchpad();
+  const { isConnected, userStats, loading, error, withdrawUsdt, api, projects, globalCounter } = useLaunchpad();
   const { positions, transactionHistory, refetch } = useUserPortfolio();
   const { withdraw, transaction } = useInvestment();
   
@@ -53,17 +87,16 @@ const Dashboard = () => {
   // Handle USDT withdrawal
   const handleUsdtWithdraw = async () => {
     try {
-      await withdrawUsdt(withdrawAmount, withdrawAddress);
+      await withdrawUsdt(withdrawAmount);
       toast({
         title: "Success",
-        description: "USDT withdrawn successfully!",
+        description: "USDT withdrawn successfully to your wallet!",
       });
       setWithdrawAmount("");
-      setWithdrawAddress("");
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to withdraw USDT",
+        description: error instanceof Error ? error.message : "Failed to withdraw USDT",
         variant: "destructive",
       });
     }
@@ -73,13 +106,11 @@ const Dashboard = () => {
   if (loading) {
     return (
       <Layout>
-        <div className="min-h-screen bg-background py-8">
-          <div className="container mx-auto px-4">
-            <div className="flex items-center justify-center min-h-[400px]">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-                <p className="text-muted-foreground font-mono">Loading dashboard...</p>
-              </div>
+        <div className="bg-background py-20">
+          <div className="container mx-auto px-4 max-w-md">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+              <p className="text-muted-foreground font-mono">Loading dashboard...</p>
             </div>
           </div>
         </div>
@@ -91,13 +122,11 @@ const Dashboard = () => {
   if (error) {
     return (
       <Layout>
-        <div className="min-h-screen bg-background py-8">
-          <div className="container mx-auto px-4">
-            <div className="flex items-center justify-center min-h-[400px]">
-              <div className="text-center">
-                <p className="text-destructive font-mono mb-4">Error: {error}</p>
-                <Button onClick={() => window.location.reload()}>Retry</Button>
-              </div>
+        <div className="bg-background py-20">
+          <div className="container mx-auto px-4 max-w-md">
+            <div className="text-center">
+              <p className="text-destructive font-mono mb-4">Error: {error}</p>
+              <Button onClick={() => window.location.reload()}>Retry</Button>
             </div>
           </div>
         </div>
@@ -109,10 +138,9 @@ const Dashboard = () => {
   if (!walletConnected || !l2Account) {
     return (
       <Layout>
-        <div className="min-h-screen bg-background py-8">
-          <div className="container mx-auto px-4">
-            <div className="flex items-center justify-center min-h-[400px]">
-              <div className="text-center space-y-4">
+        <div className="bg-background py-12">
+          <div className="container mx-auto px-4 max-w-md">
+            <div className="text-center space-y-6">
                 <div className="mb-4">
                   <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
                     {/* <Wallet className="h-8 w-8 text-muted-foreground" /> */}
@@ -127,13 +155,14 @@ const Dashboard = () => {
                   </p>
                 </div>
                 
-                <div className="flex gap-4 justify-center">
-                  <p className="text-sm font-mono text-muted-foreground">
-                    Use the wallet button in the header to connect
-                  </p>
+              <div className="space-y-4">
+                <p className="text-sm font-mono text-muted-foreground">
+                  Use the wallet button in the header to connect
+                </p>
+                <div className="flex justify-center">
                   <Link to="/">
                     <Button variant="outline" className="btn-pixel-secondary">
-                      Go to Home
+                      GO TO HOME
                     </Button>
                   </Link>
                 </div>
@@ -151,20 +180,130 @@ const Dashboard = () => {
   console.log('Dashboard: dashboardStats:', dashboardStats);
   console.log('Dashboard: balance value:', dashboardStats.balance);
   
-  const portfolioProjects = positions.map(position => ({
-    projectId: position.projectId,
-    tokenSymbol: position.tokenSymbol,
-    projectName: position.projectName || position.tokenSymbol,
-    invested: position.investedAmount,
-    tokensOwned: "0", // Would need to calculate from position data
-    currentValue: position.currentValue || "0",
-    status: position.status,
-    canWithdraw: position.canWithdraw,
-    gainLoss: position.gainLoss || "+0.00",
-    gainLossPercent: position.gainLossPercent || "+0%"
-  }));
+  const portfolioProjects: PortfolioProject[] = positions.map(position => {
+    // Find the corresponding project data to get current info
+    const projectData = projects.find(p => p.projectId === position.projectId);
+    
+    if (!projectData || !api) {
+      return {
+        projectId: position.projectId,
+        tokenSymbol: position.tokenSymbol,
+        projectName: position.projectName || position.tokenSymbol,
+        invested: position.investedAmount,
+        tokensOwned: "0",
+        currentValue: "0",
+        status: position.status,
+        canWithdraw: position.canWithdraw,
+        gainLoss: "+0.00",
+        gainLossPercent: "+0%",
+        isOverSubscribed: false,
+        refundAmount: "0"
+      };
+    }
+
+    // Calculate correct project status using globalCounter
+    let projectStatus: 'PENDING' | 'ACTIVE' | 'ENDED' = 'ENDED';
+    if (globalCounter) {
+      const startTime = parseInt(projectData.startTime);
+      const endTime = parseInt(projectData.endTime);
+      
+      if (globalCounter < startTime) {
+        projectStatus = 'PENDING';
+      } else if (globalCounter < endTime) {
+        projectStatus = 'ACTIVE';
+      } else {
+        projectStatus = 'ENDED';
+      }
+    }
+
+    // Calculate token allocation and refund
+    const userInvestment = BigInt(position.investedAmount);
+    const totalRaised = BigInt(projectData.totalRaised);
+    const tokenSupply = BigInt(projectData.tokenSupply);
+    const targetAmount = BigInt(projectData.targetAmount);
+    const isOverSubscribed = projectData.isOverSubscribed;
+
+    const allocation = api.calculateTokenAllocation(
+      userInvestment,
+      totalRaised,
+      tokenSupply,
+      targetAmount,
+      isOverSubscribed
+    );
+
+    // Format token amounts
+    const tokensOwned = Number(allocation.allocatedTokens).toLocaleString();
+    const refundAmount = Number(allocation.refundAmount).toString();
+
+    // Calculate current value (for ended projects, use token price; for active, use invested amount)
+    let currentValue = "0";
+    if (projectStatus === 'ENDED') {
+      // Use token price for ended projects
+      const tokenPrice = parseFloat(projectData.tokenPrice);
+      currentValue = (Number(allocation.allocatedTokens) * tokenPrice).toFixed(2);
+    } else {
+      // For active projects, current value equals invested amount
+      currentValue = position.investedAmount;
+    }
+
+    // Calculate P&L
+    const investedAmount = parseFloat(position.investedAmount);
+    const currentValueNum = parseFloat(currentValue);
+    const gainLoss = currentValueNum - investedAmount;
+    const gainLossPercent = investedAmount > 0 ? (gainLoss / investedAmount) * 100 : 0;
+
+    return {
+      projectId: position.projectId,
+      tokenSymbol: position.tokenSymbol,
+      projectName: position.projectName || position.tokenSymbol,
+      invested: position.investedAmount,
+      tokensOwned,
+      currentValue,
+      status: projectStatus,
+      canWithdraw: projectStatus === 'ENDED' && !position.tokensWithdrawn,
+      gainLoss: `${gainLoss >= 0 ? '+' : ''}${gainLoss.toFixed(2)}`,
+      gainLossPercent: `${gainLossPercent >= 0 ? '+' : ''}${gainLossPercent.toFixed(1)}%`,
+      isOverSubscribed,
+      refundAmount
+    };
+  });
   
-  const transactionHistoryData = transactionHistory;
+  // Map transaction history with project names
+  const transactionHistoryData = transactionHistory.map(tx => {
+    // Map project ID to project name (0 = USDT, other IDs map to project names)
+    let projectName = 'Unknown Project';
+    if (tx.project === '0') {
+      projectName = 'USDT';
+    } else {
+      // Find project by ID
+      const project = projects.find(p => p.projectId === tx.project);
+      if (project) {
+        projectName = project.tokenSymbol || project.projectName || `Project ${tx.project}`;
+      } else {
+        projectName = `Project ${tx.project}`;
+      }
+    }
+    
+    return {
+      ...tx,
+      project: projectName
+    };
+  });
+  
+  // Pagination logic for transactions
+  const totalTransactions = transactionHistoryData.length;
+  const totalPages = Math.ceil(totalTransactions / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedTransactions = transactionHistoryData.slice(startIndex, endIndex);
+
+  // Reset to first page when switching to transactions tab
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    if (value === "transactions") {
+      setCurrentPage(1);
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -191,6 +330,42 @@ const Dashboard = () => {
         return 'text-muted-foreground';
     }
   };
+
+  // Format timestamp (counter) to "X ago" format using globalCounter
+  const formatTimeAgo = (transactionCounter: string): string => {
+    try {
+      const txCounter = parseInt(transactionCounter);
+      
+      if (!globalCounter || globalCounter === 0 || isNaN(txCounter)) {
+        // Fallback to estimation if no global counter available
+        const now = Math.floor(Date.now() / 1000);
+        const estimatedCurrentCounter = Math.floor(now / 5);
+        const counterDiff = estimatedCurrentCounter - txCounter;
+        const secondsAgo = counterDiff * 5;
+        
+        if (secondsAgo < 60) return `${secondsAgo}s ago`;
+        if (secondsAgo < 3600) return `${Math.floor(secondsAgo / 60)}m ago`;
+        if (secondsAgo < 86400) return `${Math.floor(secondsAgo / 3600)}h ago`;
+        if (secondsAgo < 2592000) return `${Math.floor(secondsAgo / 86400)}d ago`;
+        return `${Math.floor(secondsAgo / 2592000)}mo ago`;
+      }
+      
+      // Use real global counter: (current counter - transaction counter) * 5 = seconds ago
+      const counterDiff = globalCounter - txCounter;
+      const secondsAgo = counterDiff * 5;
+      
+      if (secondsAgo < 0) return "just now"; // Future transaction (shouldn't happen)
+      if (secondsAgo < 60) return `${secondsAgo}s ago`;
+      if (secondsAgo < 3600) return `${Math.floor(secondsAgo / 60)}m ago`;
+      if (secondsAgo < 86400) return `${Math.floor(secondsAgo / 3600)}h ago`;
+      if (secondsAgo < 2592000) return `${Math.floor(secondsAgo / 86400)}d ago`;
+      return `${Math.floor(secondsAgo / 2592000)}mo ago`;
+    } catch (error) {
+      return transactionCounter; // Fallback to original counter if parsing fails
+    }
+  };
+
+  console.log('Dashboard: l1Account:', l1Account, l2Account);
 
   return (
     <Layout>
@@ -223,7 +398,7 @@ const Dashboard = () => {
             <StatCard
               title="Portfolio Value"
               value={`$${dashboardStats.portfolioValue}`}
-              change={dashboardStats.unrealizedGains}
+              change={dashboardStats.unrealizedGains === "0" || dashboardStats.unrealizedGains === "0.00" || parseFloat(dashboardStats.unrealizedGains || "0") === 0 ? "No gains/losses" : dashboardStats.unrealizedGains}
               changeType="positive"
             />
             <StatCard
@@ -235,7 +410,7 @@ const Dashboard = () => {
           </div>
 
           {/* Main Content */}
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
             <TabsList className="grid w-full grid-cols-3 bg-card border-2 border-border">
               <TabsTrigger 
                 value="portfolio" 
@@ -297,17 +472,39 @@ const Dashboard = () => {
                         </div>
                         <div>
                           <p className="font-mono text-xs text-muted-foreground uppercase">P&L</p>
-                          <p className="font-mono text-sm font-semibold text-success">
+                          <p className={`font-mono text-sm font-semibold ${
+                            project.gainLoss.startsWith('+') ? 'text-success' : 'text-destructive'
+                          }`}>
                             {project.gainLoss} ({project.gainLossPercent})
                           </p>
                         </div>
                       </div>
+                      
+                      {/* Oversubscribed notice */}
+                      {project.isOverSubscribed && parseFloat(project.refundAmount) > 0 && (
+                        <div className="bg-warning/10 border border-warning p-3 rounded">
+                          <div className="flex items-start gap-2">
+                            <div className="w-2 h-2 rounded-full bg-warning mt-1 animate-pulse"></div>
+                            <div className="flex-1">
+                              <p className="font-mono text-xs font-semibold text-warning uppercase mb-1">
+                                Oversubscribed Project
+                              </p>
+                              <p className="font-mono text-xs text-warning/80">
+                                Refund: ${project.refundAmount} USDT will be returned to your launchpad balance when withdrawing tokens.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      
                       <Button 
                         className={`w-full ${project.canWithdraw ? 'btn-pixel' : 'btn-pixel opacity-50'}`}
                         disabled={!project.canWithdraw}
                         onClick={() => handleWithdraw(project.projectId)}
                       >
-                        {project.canWithdraw ? 'WITHDRAW TOKENS' : 'TOKENS LOCKED'}
+                        {project.status === 'ENDED' && project.canWithdraw ? 'WITHDRAW TOKENS' : 
+                         project.status === 'ENDED' && !project.canWithdraw ? 'TOKENS WITHDRAWN' :
+                         project.status === 'ACTIVE' ? 'PROJECT ACTIVE' : 'PROJECT PENDING'}
                       </Button>
                     </CardContent>
                   </Card>
@@ -335,13 +532,20 @@ const Dashboard = () => {
             <TabsContent value="transactions" className="space-y-6">
               <Card className="card-pixel">
                 <CardHeader>
-                  <CardTitle className="font-mono text-xl text-gradient-secondary">
-                    TRANSACTION HISTORY
-                  </CardTitle>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="font-mono text-xl text-gradient-secondary">
+                      TRANSACTION HISTORY
+                    </CardTitle>
+                    {transactionHistoryData.length > 0 && (
+                      <div className="font-mono text-sm text-muted-foreground">
+                        Showing {startIndex + 1}-{Math.min(endIndex, totalTransactions)} of {totalTransactions}
+                      </div>
+                    )}
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {transactionHistoryData.map((tx, index) => (
+                    {paginatedTransactions.map((tx, index) => (
                       <div key={tx.id} className="border border-border p-4 bg-card/50 animate-fadeIn" style={{ animationDelay: `${index * 0.1}s` }}>
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center space-x-3">
@@ -356,20 +560,14 @@ const Dashboard = () => {
                             {tx.status}
                           </div>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                           <div>
                             <span className="font-mono text-muted-foreground">Amount: </span>
                             <span className="font-mono font-semibold">{tx.amount}</span>
                           </div>
                           <div>
                             <span className="font-mono text-muted-foreground">Time: </span>
-                            <span className="font-mono">{tx.timestamp}</span>
-                          </div>
-                          <div>
-                            <span className="font-mono text-muted-foreground">TX: </span>
-                            <span className="font-mono text-accent cursor-pointer hover:text-accent/80">
-                              {tx.txHash}
-                            </span>
+                            <span className="font-mono">{formatTimeAgo(tx.timestamp)}</span>
                           </div>
                         </div>
                       </div>
@@ -382,6 +580,41 @@ const Dashboard = () => {
                       </div>
                     )}
                   </div>
+                  
+                  {/* Pagination */}
+                  {totalPages > 1 && (
+                    <div className="mt-6 flex justify-center">
+                      <Pagination>
+                        <PaginationContent>
+                          <PaginationItem>
+                            <PaginationPrevious 
+                              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                              className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                            />
+                          </PaginationItem>
+                          
+                          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                            <PaginationItem key={page}>
+                              <PaginationLink
+                                onClick={() => setCurrentPage(page)}
+                                isActive={currentPage === page}
+                                className="cursor-pointer font-mono"
+                              >
+                                {page}
+                              </PaginationLink>
+                            </PaginationItem>
+                          ))}
+                          
+                          <PaginationItem>
+                            <PaginationNext 
+                              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                              className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                            />
+                          </PaginationItem>
+                                                 </PaginationContent>
+                       </Pagination>
+                     </div>
+                   )}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -443,17 +676,18 @@ const Dashboard = () => {
                         ${dashboardStats.balance}
                       </div>
                     </div>
-                    <div className="space-y-2">
+                                        <div className="space-y-2">
                       <label className="font-mono text-sm text-muted-foreground uppercase">
                         Withdrawal Address
                       </label>
-                      <input 
-                        className="w-full input-pixel" 
-                        placeholder="0x..." 
-                        type="text"
-                        value={withdrawAddress}
-                        onChange={(e) => setWithdrawAddress(e.target.value)}
-                      />
+                      <div className="bg-muted p-3 rounded border">
+                        <p className="font-mono text-sm text-foreground break-all">
+                          {l1Account?.address || 'Connect wallet to see address'}
+                        </p>
+                        <p className="font-mono text-xs text-muted-foreground mt-1">
+                          USDT will be sent to your connected wallet
+                        </p>
+                      </div>
                     </div>
                     <div className="space-y-2">
                       <label className="font-mono text-sm text-muted-foreground uppercase">
@@ -470,7 +704,7 @@ const Dashboard = () => {
                     <Button 
                       className="w-full btn-pixel-secondary"
                       onClick={handleUsdtWithdraw}
-                      disabled={!withdrawAmount || !withdrawAddress || loading}
+                                              disabled={!withdrawAmount || loading}
                     >
                       {loading ? 'WITHDRAWING...' : 'WITHDRAW USDT'}
                     </Button>

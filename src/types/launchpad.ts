@@ -129,7 +129,7 @@ export interface LaunchpadContextType {
     refreshData: () => Promise<void>;
     investInProject: (projectId: string, amount: string) => Promise<any>;
     withdrawTokens: (projectId: string) => Promise<any>;
-    withdrawUsdt: (amount: string, address: string) => Promise<any>;
+    withdrawUsdt: (amount: string) => Promise<any>;
 }
 
 // Hook return types

@@ -53,9 +53,55 @@ export const LaunchpadProvider: React.FC<LaunchpadProviderProps> = ({ children, 
     const [fallbackInitialized, setFallbackInitialized] = useState(false); // Track fallback initialization
     const [globalCounter, setGlobalCounter] = useState<number>(0); // Current global counter from RPC
 
+    // Error code mapping function
+    const getErrorMessage = (error: any): string => {
+        const errorMessage = error?.message || error?.toString() || 'Unknown error';
+        
+        // Check for specific error patterns
+        if (errorMessage.includes('InvalidInvestmentAmount')) {
+            return 'Invalid investment amount. Please check the amount and try again.';
+        }
+        if (errorMessage.includes('InvestmentExceedsCap')) {
+            return 'Investment exceeds the maximum individual cap for this project.';
+        }
+        if (errorMessage.includes('InsufficientBalance')) {
+            return 'Insufficient balance. Please deposit more USDT to continue.';
+        }
+        if (errorMessage.includes('IdoNotActive')) {
+            return 'This IDO is not currently active for investments.';
+        }
+        if (errorMessage.includes('IdoNotEnded')) {
+            return 'This IDO has not ended yet. Token withdrawal is not available.';
+        }
+        if (errorMessage.includes('IdoNotFound')) {
+            return 'IDO project not found.';
+        }
+        if (errorMessage.includes('TokensAlreadyWithdrawn')) {
+            return 'Tokens have already been withdrawn for this project.';
+        }
+        if (errorMessage.includes('RefundAlreadyWithdrawn')) {
+            return 'Refund has already been withdrawn for this project.';
+        }
+        if (errorMessage.includes('NoTokensToWithdraw')) {
+            return 'No tokens available to withdraw for this project.';
+        }
+        if (errorMessage.includes('NoRefundToWithdraw')) {
+            return 'No refund available to withdraw for this project.';
+        }
+        if (errorMessage.includes('PlayerNotExist')) {
+            return 'Player account not found. Please try connecting your wallet again.';
+        }
+        if (errorMessage.includes('PlayerAlreadyExist')) {
+            return 'Player account already exists.';
+        }
+        
+        // Default error message
+        return errorMessage;
+    };
+
     // Use wallet context from zkWasm SDK
     const walletData = useWallet();
-    const { l1Account, l2Account, playerId, setPlayerId, isConnected } = walletData;
+    const { l1Account, l2Account, playerId, setPlayerId, isConnected, connectL1 } = walletData;
     
     console.log('LaunchpadProvider: Wallet state:', {
         hasL1Account: !!l1Account,
@@ -63,6 +109,14 @@ export const LaunchpadProvider: React.FC<LaunchpadProviderProps> = ({ children, 
         playerId,
         isConnected
     });
+
+    // Auto-connect L1 when RainbowKit connection is established (similar to frontend-prediction)
+    useEffect(() => {
+        if (isConnected && !l1Account) {
+            console.log('LaunchpadContext: Auto-connecting L1 account...');
+            connectL1();
+        }
+    }, [isConnected, l1Account, connectL1]);
 
     // Initialize API when L2 account is available OR use fallback for public data
     useEffect(() => {
@@ -451,7 +505,7 @@ export const LaunchpadProvider: React.FC<LaunchpadProviderProps> = ({ children, 
                             totalTokens: "0", 
                             totalProjects: "0",
                             portfolioValue: "0",
-                            unrealizedGains: "0"
+                            unrealizedGains: "No gains/losses"
                         });
                     }
                     
@@ -467,7 +521,7 @@ export const LaunchpadProvider: React.FC<LaunchpadProviderProps> = ({ children, 
                         totalTokens: "0",
                         totalProjects: "0", 
                         portfolioValue: "0",
-                        unrealizedGains: "0"
+                        unrealizedGains: "No gains/losses"
                     });
                     setTransactionHistory([]);
                 }
@@ -482,7 +536,7 @@ export const LaunchpadProvider: React.FC<LaunchpadProviderProps> = ({ children, 
                         totalTokens: "0",
                         totalProjects: "0",
                         portfolioValue: "0", 
-                        unrealizedGains: "0"
+                        unrealizedGains: "No gains/losses"
                     });
                 } else {
                     setUserStats(null);
@@ -534,8 +588,9 @@ export const LaunchpadProvider: React.FC<LaunchpadProviderProps> = ({ children, 
             
             return result;
         } catch (error) {
-            setTransactionState({ status: 'ERROR', type: 'INVEST', error: error instanceof Error ? error.message : 'Investment failed' });
-            throw error;
+            const friendlyErrorMessage = getErrorMessage(error);
+            setTransactionState({ status: 'ERROR', type: 'INVEST', error: friendlyErrorMessage });
+            throw new Error(friendlyErrorMessage);
         }
     }, [api, isConnected, fallbackInitialized, refreshData]);
 
@@ -561,18 +616,22 @@ export const LaunchpadProvider: React.FC<LaunchpadProviderProps> = ({ children, 
             
             return result;
         } catch (error) {
-            setTransactionState({ status: 'ERROR', type: 'WITHDRAW_TOKENS', error: error instanceof Error ? error.message : 'Token withdrawal failed' });
-            throw error;
+            const friendlyErrorMessage = getErrorMessage(error);
+            setTransactionState({ status: 'ERROR', type: 'WITHDRAW_TOKENS', error: friendlyErrorMessage });
+            throw new Error(friendlyErrorMessage);
         }
     }, [api, isConnected, fallbackInitialized, refreshData]);
 
-    // Withdraw USDT  
-    const withdrawUsdt = useCallback(async (amount: string, address: string) => {
+    // Withdraw USDT to user's L1 address
+    const withdrawUsdt = useCallback(async (amount: string) => {
         if (!api) {
             throw new Error('API not available');
         }
         if (!isConnected || fallbackInitialized) {
             throw new Error('Wallet not connected or using fallback mode');
+        }
+        if (!l1Account) {
+            throw new Error('L1 account not available');
         }
 
         try {
@@ -580,8 +639,9 @@ export const LaunchpadProvider: React.FC<LaunchpadProviderProps> = ({ children, 
             
             const amountBigInt = BigInt(parseFloat(amount)); // Removed * 1e6, use raw amount
             
-            // Parse address into high and low parts (simplified)
-            const addressBigInt = BigInt(address);
+            // Use user's L1 address automatically
+            const address = l1Account.address.replace('0x', ''); // Remove 0x prefix
+            const addressBigInt = BigInt('0x' + address);
             const addressHigh = addressBigInt >> 128n;
             const addressLow = addressBigInt & ((1n << 128n) - 1n);
             
@@ -594,16 +654,17 @@ export const LaunchpadProvider: React.FC<LaunchpadProviderProps> = ({ children, 
             
             return result;
         } catch (error) {
-            setTransactionState({ status: 'ERROR', type: 'WITHDRAW_USDT', error: error instanceof Error ? error.message : 'USDT withdrawal failed' });
-            throw error;
+            const friendlyErrorMessage = getErrorMessage(error);
+            setTransactionState({ status: 'ERROR', type: 'WITHDRAW_USDT', error: friendlyErrorMessage });
+            throw new Error(friendlyErrorMessage);
         }
-    }, [api, isConnected, fallbackInitialized, refreshData]);
+    }, [api, isConnected, fallbackInitialized, refreshData, l1Account]);
 
     const value: LaunchpadContextType = {
         api,
         isConnected: isConnected && !!l2Account && !!api && !fallbackInitialized,
         walletInfo: l1Account ? {
-            address: l1Account.ethAddress,
+            address: l1Account.address,
             isConnected: !!l1Account,
             balance: "0", // Would need to fetch actual balance
             pid: playerId || ["", ""]

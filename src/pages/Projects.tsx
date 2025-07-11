@@ -73,8 +73,8 @@ const Projects = () => {
       await refreshData(); // Refresh projects data
     } catch (error) {
       toast({
-        title: "Error", 
-        description: "Failed to invest in project",
+        title: "Investment Failed", 
+        description: error instanceof Error ? error.message : "Failed to invest in project",
         variant: "destructive",
       });
     }

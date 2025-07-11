@@ -297,7 +297,7 @@ const ProjectCard = ({ project, globalCounter, className = '', style, onInvest }
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="amount" className="font-mono text-sm">
-                    Investment Amount (USDT)
+                    Investment Amount (Min 10 USDT)
                   </Label>
                   <Input
                     id="amount"

@@ -13,6 +13,9 @@ const Header = () => {
 
   // Format address for display
   const formatAddress = (address: string) => {
+    if (!address || typeof address !== 'string') {
+      return 'Invalid Address';
+    }
     return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
   };
 
@@ -41,12 +44,12 @@ const Header = () => {
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <div className="flex items-center space-x-2">
+          <Link to="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
             <div className="text-2xl font-bold text-gradient-primary animate-glow">
               zkCross
             </div>
             <div className="text-xl font-mono text-accent">Launchpad</div>
-          </div>
+          </Link>
 
           {/* Navigation */}
           <nav className="hidden md:flex items-center space-x-6">
@@ -78,26 +81,28 @@ const Header = () => {
           </nav>
 
           {/* Wallet Connection */}
-          <div className="flex items-center space-x-4">
-            {isConnected && l1Account && (
-              <div className="hidden md:flex items-center space-x-2">
+          <div className="flex items-center space-x-2 sm:space-x-4">
+            {isConnected && l1Account && l1Account.address && (
+              <div className="hidden lg:flex items-center space-x-2">
                 <Badge variant="default" className="font-mono text-xs">
-                  {formatAddress(l1Account.ethAddress)}
+                  {formatAddress(l1Account.address)}
                 </Badge>
               </div>
             )}
             
             <Button
               variant="outline"
+              size="sm"
               onClick={handleWalletClick}
-              className={`btn-pixel font-mono ${
+              className={`btn-pixel font-mono text-xs sm:text-sm px-2 sm:px-4 ${
                 isConnected && isL2Connected
                   ? 'border-success text-success hover:bg-success hover:text-success-foreground' 
                   : 'border-primary text-primary hover:bg-primary hover:text-primary-foreground'
               }`}
             >
-              <Wallet className="h-4 w-4 mr-2" />
-              {isConnected && isL2Connected ? 'CONNECTED' : 'CONNECT WALLET'}
+              <Wallet className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">{isConnected && isL2Connected ? 'CONNECTED' : 'CONNECT LAUNCHPAD'}</span>
+              <span className="sm:hidden">{isConnected && isL2Connected ? 'CONNECTED' : 'CONNECT'}</span>
             </Button>
           </div>
         </div>
