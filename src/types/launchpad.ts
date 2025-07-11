@@ -116,6 +116,7 @@ export interface LaunchpadContextType {
     userPositions: any[];
     userStats: any | null; // Allow null for when user has no stats
     transactionHistory: any[];
+    globalCounter: number; // Current global counter from RPC query
     
     // UI state
     loading: boolean;

@@ -19,7 +19,7 @@ const Projects = () => {
   const [publicError, setPublicError] = useState<string | null>(null);
 
   // Use launchpad context hooks
-  const { isConnected, loading, error, refreshData } = useLaunchpad();
+  const { isConnected, loading, error, refreshData, globalCounter } = useLaunchpad();
   const { projects } = useProjects();
   const { invest, transaction } = useInvestment();
 
@@ -80,8 +80,9 @@ const Projects = () => {
     }
   };
 
-  // Use connected user projects or public projects
-  const allProjects = isConnected && projects.length > 0 
+  // Always use LaunchpadContext projects data (which includes 5-second auto-refresh)
+  // Fall back to publicProjects only if LaunchpadContext has no data
+  const allProjects = projects.length > 0
     ? projects.map(project => ({
         projectId: project.projectId,
         projectName: project.projectName || `${project.tokenSymbol} Project`,
@@ -90,11 +91,14 @@ const Projects = () => {
         targetAmount: project.targetAmount,
         totalRaised: project.totalRaised,
         totalInvestors: project.totalInvestors,
-        startTime: new Date(Number(project.startTime) * 1000).toISOString().split('T')[0],
-        endTime: new Date(Number(project.endTime) * 1000).toISOString().split('T')[0],
+        startTime: project.startTime, // Keep as counter value
+        endTime: project.endTime, // Keep as counter value
         status: project.status,
         isOverSubscribed: project.isOverSubscribed,
-        progress: project.progress
+        progress: project.progress,
+        maxIndividualCap: project.maxIndividualCap,
+        tokenPrice: project.tokenPrice,
+        tokenSupply: project.tokenSupply
       }))
     : publicProjects.map(project => ({
         projectId: project.projectId,
@@ -104,11 +108,14 @@ const Projects = () => {
         targetAmount: project.targetAmount,
         totalRaised: project.totalRaised,
         totalInvestors: project.totalInvestors,
-        startTime: new Date(Number(project.startTime) * 1000).toISOString().split('T')[0],
-        endTime: new Date(Number(project.endTime) * 1000).toISOString().split('T')[0],
+        startTime: project.startTime, // Keep as counter value
+        endTime: project.endTime, // Keep as counter value
         status: project.status,
         isOverSubscribed: project.isOverSubscribed,
-        progress: project.progress
+        progress: project.progress,
+        maxIndividualCap: project.maxIndividualCap,
+        tokenPrice: project.tokenPrice,
+        tokenSupply: project.tokenSupply
       }));
 
   const filteredProjects = allProjects.filter(project => {
@@ -127,12 +134,13 @@ const Projects = () => {
       case "INVESTORS":
         return parseInt(b.totalInvestors) - parseInt(a.totalInvestors);
       default:
-        return new Date(b.startTime).getTime() - new Date(a.startTime).getTime();
+        // Sort by startTime counter (higher counter = later/newer)
+        return parseInt(b.startTime) - parseInt(a.startTime);
     }
   });
 
   // Show loading state
-  if ((isConnected && loading) || (!isConnected && publicLoading)) {
+  if (loading || (!projects.length && publicLoading)) {
     return (
       <Layout>
         <div className="min-h-screen bg-background py-8">
@@ -149,8 +157,8 @@ const Projects = () => {
     );
   }
 
-  // Show error state
-  if ((isConnected && error) || (!isConnected && publicError)) {
+  // Show error state  
+  if (error || (!projects.length && publicError)) {
     return (
       <Layout>
         <div className="min-h-screen bg-background py-8">
@@ -302,6 +310,7 @@ const Projects = () => {
               <ProjectCard
                 key={project.projectId}
                 project={project}
+                globalCounter={globalCounter}
                 className="animate-fadeIn"
                 style={{ animationDelay: `${index * 0.05}s` }}
                 onInvest={handleInvest}

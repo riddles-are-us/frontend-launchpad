@@ -13,7 +13,7 @@ const Home = () => {
   
   // Use real data from LaunchpadContext
   const { projects } = useProjects();
-  const { isConnected, loading } = useLaunchpad();
+  const { isConnected, loading, globalCounter } = useLaunchpad();
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -58,11 +58,14 @@ const Home = () => {
     targetAmount: project.targetAmount,
     totalRaised: project.totalRaised,
     totalInvestors: project.totalInvestors,
-    startTime: new Date(Number(project.startTime) * 1000).toISOString().split('T')[0],
-    endTime: new Date(Number(project.endTime) * 1000).toISOString().split('T')[0],
+    startTime: project.startTime, // Keep as counter value
+    endTime: project.endTime, // Keep as counter value
     status: project.status,
     isOverSubscribed: project.isOverSubscribed,
-    progress: project.progress
+    progress: project.progress,
+    maxIndividualCap: project.maxIndividualCap || "0",
+    tokenPrice: project.tokenPrice || "0",
+    tokenSupply: project.tokenSupply || "0"
   }));
 
   return (
@@ -174,6 +177,7 @@ const Home = () => {
               <ProjectCard
                 key={project.projectId}
                 project={project}
+                globalCounter={globalCounter}
                 className="animate-fadeIn"
                 style={{ animationDelay: `${index * 0.1}s` } as React.CSSProperties}
               />

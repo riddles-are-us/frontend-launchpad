@@ -35,6 +35,8 @@ interface GlobalPlayerState {
 const LaunchpadContext = createContext<LaunchpadContextType | undefined>(undefined);
 
 export const LaunchpadProvider: React.FC<LaunchpadProviderProps> = ({ children, config }) => {
+    console.log('LaunchpadProvider: Component mounted with config:', config);
+    
     const [api, setApi] = useState<LaunchpadAPI | null>(null);
     const [projects, setProjects] = useState<IdoProjectData[]>([]);
     const [userPositions, setUserPositions] = useState<UserProjectPosition[]>([]);
@@ -48,32 +50,64 @@ export const LaunchpadProvider: React.FC<LaunchpadProviderProps> = ({ children, 
     const [playerInstalled, setPlayerInstalled] = useState(false);
     const [apiInitializing, setApiInitializing] = useState(false);
     const [userBalance, setUserBalance] = useState<string>("0"); // Add user balance state
+    const [fallbackInitialized, setFallbackInitialized] = useState(false); // Track fallback initialization
+    const [globalCounter, setGlobalCounter] = useState<number>(0); // Current global counter from RPC
 
     // Use wallet context from zkWasm SDK
     const walletData = useWallet();
     const { l1Account, l2Account, playerId, setPlayerId, isConnected } = walletData;
+    
+    console.log('LaunchpadProvider: Wallet state:', {
+        hasL1Account: !!l1Account,
+        hasL2Account: !!l2Account,
+        playerId,
+        isConnected
+    });
 
-    // Initialize API when L2 account is available
+    // Initialize API when L2 account is available OR use fallback for public data
     useEffect(() => {
-        if (l2Account && l2Account.getPrivateKey && !api && !apiInitializing) {
-            initializeAPI();
+        console.log('LaunchpadContext: API initialization check:', {
+            hasL2Account: !!l2Account,
+            hasPrivateKey: !!(l2Account && l2Account.getPrivateKey),
+            hasApi: !!api,
+            apiInitializing,
+            fallbackInitialized
+        });
+        
+        if (l2Account && l2Account.getPrivateKey && !apiInitializing) {
+            // If wallet is connected, always reinitialize API with user's private key
+            if (fallbackInitialized || !api) {
+                console.log('LaunchpadContext: Reinitializing API with wallet private key...');
+                setFallbackInitialized(false); // Reset fallback flag when wallet connects
+                setApi(null); // Clear existing API instance
+                setPlayerInstalled(false); // Reset player installation
+                initializeAPI();
+            }
+        } else if (!l2Account && !apiInitializing) {
+            // If no wallet is connected, ensure we have fallback API
+            if (!fallbackInitialized || !api) {
+                console.log('LaunchpadContext: Initializing/reinitializing API with fallback...');
+                setFallbackInitialized(true);
+                setApi(null); // Clear any existing API
+                setPlayerInstalled(false); // Reset player state
+                initializeAPIWithFallback();
+            }
         }
-    }, [l2Account, api, apiInitializing]);
+    }, [l2Account, api, apiInitializing, fallbackInitialized]);
 
-    // Reset all state when wallet is disconnected
+    // Reset user-specific state when wallet is disconnected
     useEffect(() => {
-        if (!l1Account && !l2Account) {
-            setProjects([]);
+        if (!l1Account && !l2Account && fallbackInitialized) {
+            console.log('LaunchpadContext: Wallet disconnected, resetting user data and switching back to fallback mode');
             setUserPositions([]);
             setUserStats(null);
             setTransactionHistory([]);
-            setApi(null);
-            setPlayerInstalled(false);
-            setApiInitializing(false);
             setLoading(false);
             setError(null);
+            // Don't reset API or playerInstalled in fallback mode to keep 5s updates working
+            // The main initialization effect will handle switching between user and fallback APIs
         }
-    }, [l1Account, l2Account]);
+    }, [l1Account, l2Account, fallbackInitialized]);
 
     // Auto-install player when L2 is connected and API is ready
     useEffect(() => {
@@ -150,24 +184,34 @@ export const LaunchpadProvider: React.FC<LaunchpadProviderProps> = ({ children, 
         }
     }, [l2Account, playerInstalled, api]);
 
-    // Set up polling when API is ready and player is installed
+    // Set up polling when API is ready and either player is installed OR using fallback
     useEffect(() => {
-        if (api && playerInstalled && playerId) {
-            console.log("Player installed, starting data polling...");
+        console.log('LaunchpadContext: Polling setup check:', {
+            hasApi: !!api,
+            playerInstalled,
+            isConnected
+        });
+        
+        if (api && playerInstalled) {
+            console.log("LaunchpadContext: API ready and player installed, starting data polling...");
             
             // Load initial data
             loadInitialData();
             
             // Set up polling interval (every 5 seconds)
             const pollInterval = setInterval(() => {
+                console.log('LaunchpadContext: 5-second auto refresh triggered');
                 refreshData(false); // false = automatic refresh
             }, 5000);
 
             return () => {
+                console.log('LaunchpadContext: Cleaning up polling interval');
                 clearInterval(pollInterval);
             };
+        } else {
+            console.log('LaunchpadContext: Not starting polling - requirements not met');
         }
-    }, [api, playerInstalled, playerId]);
+    }, [api, playerInstalled]);
 
     // Initialize API connection
     const initializeAPI = useCallback(() => {
@@ -201,6 +245,35 @@ export const LaunchpadProvider: React.FC<LaunchpadProviderProps> = ({ children, 
         }
     }, [config, l2Account, apiInitializing]);
 
+    // Initialize API with fallback private key for public data access
+    const initializeAPIWithFallback = useCallback(() => {
+        if (apiInitializing) return;
+        
+        setApiInitializing(true);
+        setError(null);
+
+        try {
+            console.log('LaunchpadContext: Initializing API with fallback private key for public data access');
+
+            // Use a fallback private key for public data access
+            const fallbackPrivkey = "000000";
+
+            const apiInstance = createLaunchpadAPI({
+                serverUrl: config.serverUrl,
+                privkey: fallbackPrivkey
+            });
+            
+            setApi(apiInstance);
+            setPlayerInstalled(true); // Set as installed to enable data polling
+            console.log("LaunchpadContext: API initialized successfully with fallback private key");
+        } catch (err) {
+            console.error('Failed to initialize API with fallback:', err);
+            setError(err instanceof Error ? err.message : 'Failed to initialize API');
+        } finally {
+            setApiInitializing(false);
+        }
+    }, [config, apiInitializing]);
+
     // Load initial data
     const loadInitialData = useCallback(async () => {
         if (!api) return;
@@ -230,18 +303,13 @@ export const LaunchpadProvider: React.FC<LaunchpadProviderProps> = ({ children, 
 
             console.log('LaunchpadContext: Starting data refresh...');
 
-            // Fetch all projects (always available)
-            console.log('LaunchpadContext: Calling api.getAllProjects()...');
-            const allProjects = await api.getAllProjects();
-            console.log('LaunchpadContext: Received projects:', allProjects);
-            setProjects(allProjects);
-
             let currentBalance = "0.00";
+            let globalCounter = 0;
 
-            // Query user balance using RPC if L2 account is available
+            // Query user balance and global state using RPC if L2 account is available
             if (l2Account && l2Account.getPrivateKey) {
                 try {
-                    console.log('LaunchpadContext: Querying user balance via RPC...');
+                    console.log('LaunchpadContext: Querying user balance and global state via RPC...');
                     const rpcResponse: any = await api.rpc.queryState(l2Account.getPrivateKey());
                     console.log('LaunchpadContext: RPC response:', rpcResponse);
                     
@@ -251,18 +319,26 @@ export const LaunchpadProvider: React.FC<LaunchpadProviderProps> = ({ children, 
                         console.log('LaunchpadContext: Parsed RPC data:', parsedData);
                         
                         if (parsedData.player && parsedData.player.data && parsedData.player.data.balance) {
-                            // Convert balance from smallest unit to USDT (assuming 6 decimals)
+                            // Don't convert balance, use raw value for now to see what it should be
                             const balanceRaw = BigInt(parsedData.player.data.balance);
-                            const balanceUSDT = (Number(balanceRaw) / 1e6).toFixed(2);
+                            const balanceUSDT = Number(balanceRaw).toFixed(2); // No division, use raw value
                             currentBalance = balanceUSDT;
                             setUserBalance(balanceUSDT);
-                            console.log('LaunchpadContext: Updated user balance:', balanceUSDT, 'USDT');
+                            console.log('LaunchpadContext: Raw balance:', balanceRaw);
+                            console.log('LaunchpadContext: Display balance:', balanceUSDT, 'USDT');
                         } else {
                             console.log('LaunchpadContext: No player balance found in RPC response');
                             setUserBalance("0.00");
                         }
                         
-                        // Extract global state information for potential future use
+                        // Extract global counter for project status calculation
+                        if (parsedData.state && parsedData.state.counter) {
+                            globalCounter = parsedData.state.counter;
+                            setGlobalCounter(globalCounter);
+                            console.log('LaunchpadContext: Global counter:', globalCounter);
+                        }
+                        
+                        // Log global state information
                         if (parsedData.state) {
                             console.log('LaunchpadContext: Global state:', {
                                 counter: parsedData.state.counter,
@@ -279,8 +355,72 @@ export const LaunchpadProvider: React.FC<LaunchpadProviderProps> = ({ children, 
                     setUserBalance("0.00");
                 }
             } else {
+                // For fallback mode, try to get global counter from RPC with fallback key
+                try {
+                    console.log('LaunchpadContext: Querying global state via RPC with fallback key...');
+                    const fallbackPrivkey = "000000";
+                    const rpcResponse: any = await api.rpc.queryState(fallbackPrivkey);
+                    console.log('LaunchpadContext: Fallback RPC response:', rpcResponse);
+                    
+                    if (rpcResponse && rpcResponse.success && rpcResponse.data) {
+                        const parsedData = JSON.parse(rpcResponse.data);
+                        console.log('LaunchpadContext: Parsed fallback RPC data:', parsedData);
+                        
+                        // Extract global counter for project status calculation
+                        if (parsedData.state && parsedData.state.counter) {
+                            globalCounter = parsedData.state.counter;
+                            setGlobalCounter(globalCounter);
+                            console.log('LaunchpadContext: Global counter from fallback:', globalCounter);
+                        }
+                        
+                        // Log global state information
+                        if (parsedData.state) {
+                            console.log('LaunchpadContext: Global state from fallback:', {
+                                counter: parsedData.state.counter,
+                                totalPlayers: parsedData.state.total_players,
+                                totalProjects: parsedData.state.total_projects
+                            });
+                        }
+                    }
+                } catch (fallbackError) {
+                    console.warn('LaunchpadContext: Failed to query global state via fallback RPC:', fallbackError);
+                }
                 setUserBalance("0.00");
             }
+
+            // Fetch all projects (always available)
+            console.log('LaunchpadContext: Calling api.getAllProjects()...');
+            const allProjects = await api.getAllProjects();
+            console.log('LaunchpadContext: Received projects:', allProjects);
+            
+            // Update project status based on global counter
+            const projectsWithUpdatedStatus = allProjects.map(project => {
+                let status: 'PENDING' | 'ACTIVE' | 'ENDED';
+                const startTime = parseInt(project.startTime);
+                const endTime = parseInt(project.endTime);
+                
+                if (globalCounter < startTime) {
+                    status = 'PENDING';
+                } else if (globalCounter < endTime) {
+                    status = 'ACTIVE';
+                } else {
+                    status = 'ENDED';
+                }
+                
+                console.log(`LaunchpadContext: Project ${project.projectId} status calculation:`, {
+                    globalCounter,
+                    startTime,
+                    endTime,
+                    status
+                });
+                
+                return {
+                    ...project,
+                    status
+                };
+            });
+            
+            setProjects(projectsWithUpdatedStatus);
 
             // Only fetch user data if player is fully connected
             if (playerId && isConnected && l2Account) {
@@ -372,15 +512,18 @@ export const LaunchpadProvider: React.FC<LaunchpadProviderProps> = ({ children, 
 
     // Invest in project
     const investInProject = useCallback(async (projectId: string, amount: string) => {
-        if (!api || !playerId) {
-            throw new Error('API not available or player not installed');
+        if (!api) {
+            throw new Error('API not available');
+        }
+        if (!isConnected || fallbackInitialized) {
+            throw new Error('Wallet not connected or using fallback mode');
         }
 
         try {
             setTransactionState({ status: 'PENDING', type: 'INVEST' });
             
             const projectIdBigInt = BigInt(projectId);
-            const amountBigInt = BigInt(parseFloat(amount) * 1e6); // Assuming 6 decimals for USDT
+            const amountBigInt = BigInt(parseFloat(amount)); // Removed * 1e6, use raw amount
             
             const result = await api.investInProject(projectIdBigInt, amountBigInt);
             
@@ -394,12 +537,15 @@ export const LaunchpadProvider: React.FC<LaunchpadProviderProps> = ({ children, 
             setTransactionState({ status: 'ERROR', type: 'INVEST', error: error instanceof Error ? error.message : 'Investment failed' });
             throw error;
         }
-    }, [api, playerId, refreshData]);
+    }, [api, isConnected, fallbackInitialized, refreshData]);
 
     // Withdraw tokens
     const withdrawTokens = useCallback(async (projectId: string) => {
-        if (!api || !playerId) {
-            throw new Error('API not available or player not installed');
+        if (!api) {
+            throw new Error('API not available');
+        }
+        if (!isConnected || fallbackInitialized) {
+            throw new Error('Wallet not connected or using fallback mode');
         }
 
         try {
@@ -418,18 +564,21 @@ export const LaunchpadProvider: React.FC<LaunchpadProviderProps> = ({ children, 
             setTransactionState({ status: 'ERROR', type: 'WITHDRAW_TOKENS', error: error instanceof Error ? error.message : 'Token withdrawal failed' });
             throw error;
         }
-    }, [api, playerId, refreshData]);
+    }, [api, isConnected, fallbackInitialized, refreshData]);
 
     // Withdraw USDT  
     const withdrawUsdt = useCallback(async (amount: string, address: string) => {
-        if (!api || !playerId) {
-            throw new Error('API not available or player not installed');
+        if (!api) {
+            throw new Error('API not available');
+        }
+        if (!isConnected || fallbackInitialized) {
+            throw new Error('Wallet not connected or using fallback mode');
         }
 
         try {
             setTransactionState({ status: 'PENDING', type: 'WITHDRAW_USDT' });
             
-            const amountBigInt = BigInt(parseFloat(amount) * 1e6); // Assuming 6 decimals for USDT
+            const amountBigInt = BigInt(parseFloat(amount)); // Removed * 1e6, use raw amount
             
             // Parse address into high and low parts (simplified)
             const addressBigInt = BigInt(address);
@@ -448,11 +597,11 @@ export const LaunchpadProvider: React.FC<LaunchpadProviderProps> = ({ children, 
             setTransactionState({ status: 'ERROR', type: 'WITHDRAW_USDT', error: error instanceof Error ? error.message : 'USDT withdrawal failed' });
             throw error;
         }
-    }, [api, playerId, refreshData]);
+    }, [api, isConnected, fallbackInitialized, refreshData]);
 
     const value: LaunchpadContextType = {
         api,
-        isConnected: isConnected && !!l2Account && playerInstalled,
+        isConnected: isConnected && !!l2Account && !!api && !fallbackInitialized,
         walletInfo: l1Account ? {
             address: l1Account.ethAddress,
             isConnected: !!l1Account,
@@ -463,6 +612,7 @@ export const LaunchpadProvider: React.FC<LaunchpadProviderProps> = ({ children, 
         userPositions,
         userStats,
         transactionHistory,
+        globalCounter,
         loading,
         error,
         transactionState,

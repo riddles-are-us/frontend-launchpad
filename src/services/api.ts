@@ -427,20 +427,36 @@ export class LaunchpadAPI extends PlayerConvention {
     }
 
     // Utility functions
-    private formatProjectData(project: any): IdoProjectData {
-        const currentTime = BigInt(Math.floor(Date.now() / 1000));
-        const startTime = BigInt(project.startTime);
-        const endTime = BigInt(project.endTime);
+    private formatProjectData(project: any, globalCounter?: number): IdoProjectData {
         const totalRaised = BigInt(project.totalRaised);
         const targetAmount = BigInt(project.targetAmount);
 
         let status: 'PENDING' | 'ACTIVE' | 'ENDED';
-        if (currentTime < startTime) {
-            status = 'PENDING';
-        } else if (currentTime < endTime) {
-            status = 'ACTIVE';
+        if (globalCounter !== undefined) {
+            // Use counter-based status calculation
+            const startTime = parseInt(project.startTime);
+            const endTime = parseInt(project.endTime);
+            
+            if (globalCounter < startTime) {
+                status = 'PENDING';
+            } else if (globalCounter < endTime) {
+                status = 'ACTIVE';
+            } else {
+                status = 'ENDED';
+            }
         } else {
-            status = 'ENDED';
+            // Fallback to time-based calculation if counter not available
+            const currentTime = BigInt(Math.floor(Date.now() / 1000));
+            const startTime = BigInt(project.startTime);
+            const endTime = BigInt(project.endTime);
+            
+            if (currentTime < startTime) {
+                status = 'PENDING';
+            } else if (currentTime < endTime) {
+                status = 'ACTIVE';
+            } else {
+                status = 'ENDED';
+            }
         }
 
         const progress = targetAmount > 0n ? Number((totalRaised * 100n) / targetAmount) : 0;
@@ -619,7 +635,9 @@ export const getPublicProjects = async (): Promise<IdoProjectData[]> => {
             throw new Error(result.message || 'Failed to get projects data');
         }
         
-        return result.data.map((project: any) => formatPublicProjectData(project));
+        // For public projects, we don't have access to global counter, so use a default status
+        // The real status will be calculated when user connects wallet
+        return result.data.map((project: any) => formatPublicProjectData(project, 0)); // Pass 0 as default counter
     } catch (error) {
         console.error('Failed to get public projects:', error);
         throw error;
@@ -627,17 +645,17 @@ export const getPublicProjects = async (): Promise<IdoProjectData[]> => {
 };
 
 // Helper function to format project data without class context
-const formatPublicProjectData = (project: any): IdoProjectData => {
-    const currentTime = BigInt(Math.floor(Date.now() / 1000));
-    const startTime = BigInt(project.startTime);
-    const endTime = BigInt(project.endTime);
+const formatPublicProjectData = (project: any, globalCounter: number): IdoProjectData => {
     const totalRaised = BigInt(project.totalRaised);
     const targetAmount = BigInt(project.targetAmount);
 
     let status: 'PENDING' | 'ACTIVE' | 'ENDED';
-    if (currentTime < startTime) {
+    const startTime = parseInt(project.startTime);
+    const endTime = parseInt(project.endTime);
+    
+    if (globalCounter < startTime) {
         status = 'PENDING';
-    } else if (currentTime < endTime) {
+    } else if (globalCounter < endTime) {
         status = 'ACTIVE';
     } else {
         status = 'ENDED';

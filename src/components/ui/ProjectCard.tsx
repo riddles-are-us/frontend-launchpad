@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,7 @@ interface ProjectCardProps {
     projectId: string;
     projectName: string;
     tokenSymbol: string;
-    description?: string; // Add description field
+    description?: string;
     targetAmount: string;
     totalRaised: string;
     totalInvestors: string;
@@ -18,15 +18,28 @@ interface ProjectCardProps {
     status: 'PENDING' | 'ACTIVE' | 'ENDED';
     isOverSubscribed: boolean;
     progress: number;
+    maxIndividualCap: string;
+    tokenPrice: string;
+    tokenSupply: string;
   };
+  globalCounter?: number; // Current global counter from RPC
   className?: string;
   style?: React.CSSProperties;
   onInvest?: (projectId: string, amount: string) => void;
 }
 
-const ProjectCard = ({ project, className = '', style, onInvest }: ProjectCardProps) => {
+const ProjectCard = ({ project, globalCounter, className = '', style, onInvest }: ProjectCardProps) => {
   const [investAmount, setInvestAmount] = useState("");
   const [isInvestDialogOpen, setIsInvestDialogOpen] = useState(false);
+  const [, forceUpdate] = useState({});
+
+  // Force update every 5 seconds to sync with global counter updates
+  useEffect(() => {
+    const interval = setInterval(() => {
+      forceUpdate({});
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleInvest = () => {
     if (onInvest && investAmount) {
@@ -51,12 +64,104 @@ const ProjectCard = ({ project, className = '', style, onInvest }: ProjectCardPr
 
   const formatAmount = (amount: string) => {
     const num = parseFloat(amount);
-    if (num >= 1000000) {
-      return `${(num / 1000000).toFixed(1)}M`;
-    } else if (num >= 1000) {
-      return `${(num / 1000).toFixed(1)}K`;
+    // Return the full amount with comma separators for readability
+    return new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2
+    }).format(num);
+  };
+
+  const formatTokenSupply = (supply: string) => {
+    const num = parseFloat(supply);
+    if (num >= 1e12) {
+      return `${(num / 1e12).toFixed(1)}T`; // Trillion
+    } else if (num >= 1e9) {
+      return `${(num / 1e9).toFixed(1)}B`; // Billion
+    } else if (num >= 1e6) {
+      return `${(num / 1e6).toFixed(1)}M`; // Million
+    } else if (num >= 1e3) {
+      return `${(num / 1e3).toFixed(1)}K`; // Thousand
     }
-    return num.toFixed(0);
+    return num.toString();
+  };
+
+  const calculateAndFormatTokenPrice = (targetAmount: string, tokenSupply: string) => {
+    const target = parseFloat(targetAmount);
+    const supply = parseFloat(tokenSupply);
+    
+    // Avoid division by zero
+    if (supply === 0 || isNaN(target) || isNaN(supply)) {
+      return "N/A";
+    }
+    
+    const price = target / supply;
+    
+    // For very small numbers, use scientific notation
+    if (price < 0.0001) {
+      return price.toExponential(2); // e.g., 1.23e-5
+    } else if (price < 0.01) {
+      return price.toFixed(6); // e.g., 0.000123
+    } else if (price < 1) {
+      return price.toFixed(4); // e.g., 0.1234
+    } else {
+      return price.toFixed(3); // e.g., 1.234
+    }
+  };
+
+  const calculateAccurateProgress = (totalRaised: string, targetAmount: string) => {
+    const raised = parseFloat(totalRaised);
+    const target = parseFloat(targetAmount);
+    
+    if (target === 0 || isNaN(raised) || isNaN(target)) {
+      return 0;
+    }
+    
+    return Math.min((raised / target) * 100, 100);
+  };
+
+  const formatTimeRemaining = (status: string, startTime: string, endTime: string) => {
+    // startTime and endTime are already counter values from the backend
+    const startCounter = parseInt(startTime);
+    const endCounter = parseInt(endTime);
+    
+    // Use the real global counter if available, otherwise fallback to estimation
+    let currentCounter = globalCounter;
+    if (!currentCounter || currentCounter === 0) {
+      // Fallback to estimation if no global counter available
+      const now = Math.floor(Date.now() / 1000);
+      currentCounter = Math.floor(now / 5);
+    }
+    
+    if (status === 'PENDING') {
+      const remainingCounters = startCounter - currentCounter;
+      if (remainingCounters <= 0) return "Starting soon";
+      return `Starts in ${formatCounterTime(remainingCounters)}`;
+    } else if (status === 'ACTIVE') {
+      const remainingCounters = endCounter - currentCounter;
+      if (remainingCounters <= 0) return "Ending soon";
+      return `Ends in ${formatCounterTime(remainingCounters)}`;
+    } else {
+      return "Ended";
+    }
+  };
+
+  const formatCounterTime = (counters: number) => {
+    const totalSeconds = counters * 5;
+    
+    const days = Math.floor(totalSeconds / (24 * 3600));
+    const hours = Math.floor((totalSeconds % (24 * 3600)) / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    
+    if (days > 0) {
+      return `${days}d ${hours}h`;
+    } else if (hours > 0) {
+      return `${hours}h ${minutes}m`;
+    } else if (minutes > 0) {
+      return `${minutes}m ${seconds}s`;
+    } else {
+      return `${seconds}s`;
+    }
   };
 
   return (
@@ -86,48 +191,91 @@ const ProjectCard = ({ project, className = '', style, onInvest }: ProjectCardPr
         <div className="flex justify-between items-center">
           <span className="font-mono text-sm text-muted-foreground">Progress</span>
           <span className="font-mono text-sm font-semibold text-primary">
-            {project.progress.toFixed(1)}%
+            {calculateAccurateProgress(project.totalRaised, project.targetAmount).toFixed(2)}%
           </span>
         </div>
-        <div className="progress-pixel" style={{ '--progress': `${Math.min(project.progress, 100)}%` } as React.CSSProperties}>
+        <div className="progress-pixel" style={{ '--progress': `${calculateAccurateProgress(project.totalRaised, project.targetAmount)}%` } as React.CSSProperties}>
         </div>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 gap-4 mb-4">
-        <div className="space-y-1">
-          <p className="font-mono text-xs text-muted-foreground uppercase">Target</p>
-          <p className="font-mono text-sm font-semibold text-foreground">
-            {formatAmount(project.targetAmount)} USDT
-          </p>
-        </div>
-        <div className="space-y-1">
-          <p className="font-mono text-xs text-muted-foreground uppercase">Raised</p>
-          <p className="font-mono text-sm font-semibold text-accent">
-            {formatAmount(project.totalRaised)} USDT
-          </p>
-        </div>
-        <div className="space-y-1">
-          <p className="font-mono text-xs text-muted-foreground uppercase">Investors</p>
-          <p className="font-mono text-sm font-semibold text-secondary">
-            {project.totalInvestors}
-          </p>
-        </div>
-        <div className="space-y-1">
-          <p className="font-mono text-xs text-muted-foreground uppercase">Status</p>
-          {project.isOverSubscribed ? (
-            <p className="font-mono text-xs font-semibold text-warning uppercase">
-              Oversubscribed
+      <div className="space-y-3 mb-4">
+        {/* First row: Target & Raised */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-1">
+            <p className="font-mono text-xs text-muted-foreground uppercase">Target</p>
+            <p className="font-mono text-sm font-semibold text-foreground">
+              {formatAmount(project.targetAmount)} USDT
             </p>
-          ) : (
-            <p className={`font-mono text-xs font-semibold uppercase ${
-              project.status === 'ACTIVE' ? 'text-green-500' :
-              project.status === 'PENDING' ? 'text-yellow-500' :
-              'text-gray-500'
-            }`}>
-              {project.status}
+          </div>
+          <div className="space-y-1">
+            <p className="font-mono text-xs text-muted-foreground uppercase">Raised</p>
+            <p className="font-mono text-sm font-semibold text-accent">
+              {formatAmount(project.totalRaised)} USDT
             </p>
-          )}
+          </div>
+        </div>
+        
+        {/* Second row: Token Supply & Token Price */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-1">
+            <p className="font-mono text-xs text-muted-foreground uppercase">Token Supply</p>
+            <p className="font-mono text-sm font-semibold text-primary">
+              {formatTokenSupply(project.tokenSupply)} {project.tokenSymbol}
+            </p>
+          </div>
+          <div className="space-y-1">
+            <p className="font-mono text-xs text-muted-foreground uppercase">Token Price</p>
+            <p className="font-mono text-sm font-semibold text-secondary">
+              {calculateAndFormatTokenPrice(project.targetAmount, project.tokenSupply)} USDT
+            </p>
+          </div>
+        </div>
+        
+        {/* Third row: Max Cap & Investors */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-1">
+            <p className="font-mono text-xs text-muted-foreground uppercase">Max Individual Cap</p>
+            <p className="font-mono text-sm font-semibold text-warning">
+              {formatAmount(project.maxIndividualCap)} USDT
+            </p>
+          </div>
+          <div className="space-y-1">
+            <p className="font-mono text-xs text-muted-foreground uppercase">Investors</p>
+            <p className="font-mono text-sm font-semibold text-secondary">
+              {project.totalInvestors}
+            </p>
+          </div>
+        </div>
+        
+        {/* Status row */}
+        <div className="pt-2 border-t border-border/50">
+          <div className="flex items-center justify-between">
+            <p className="font-mono text-xs text-muted-foreground uppercase">Status</p>
+            <div className="text-right">
+              {project.isOverSubscribed ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-warning animate-pulse"></div>
+                  <p className="font-mono text-xs font-semibold text-warning uppercase">
+                    Oversubscribed
+                  </p>
+                </div>
+              ) : (
+                <div>
+                  <p className={`font-mono text-xs font-semibold uppercase ${
+                    project.status === 'ACTIVE' ? 'text-green-500' :
+                    project.status === 'PENDING' ? 'text-yellow-500' :
+                    'text-gray-500'
+                  }`}>
+                    {project.status}
+                  </p>
+                  <p className="font-mono text-xs text-muted-foreground mt-1">
+                    {formatTimeRemaining(project.status, project.startTime, project.endTime)}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
