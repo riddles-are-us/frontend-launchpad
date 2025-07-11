@@ -31,15 +31,9 @@ interface ProjectCardProps {
 const ProjectCard = ({ project, globalCounter, className = '', style, onInvest }: ProjectCardProps) => {
   const [investAmount, setInvestAmount] = useState("");
   const [isInvestDialogOpen, setIsInvestDialogOpen] = useState(false);
-  const [, forceUpdate] = useState({});
 
-  // Force update every 5 seconds to sync with global counter updates
-  useEffect(() => {
-    const interval = setInterval(() => {
-      forceUpdate({});
-    }, 5000);
-    return () => clearInterval(interval);
-  }, []);
+  // Note: Component updates automatically when LaunchpadContext refreshes data every 5 seconds
+  // Removed duplicate 5-second interval to avoid redundant updates
 
   const handleInvest = () => {
     if (onInvest && investAmount) {

@@ -46,17 +46,12 @@ interface PortfolioProject {
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("portfolio");
   const [withdrawAmount, setWithdrawAmount] = useState("");
+  const [depositAmount, setDepositAmount] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-  const [, forceUpdate] = useState({});
 
-  // Update time display every 5 seconds to match counter updates
-  useEffect(() => {
-    const interval = setInterval(() => {
-      forceUpdate({});
-    }, 5000); // Update every 5 seconds (1 counter = 5 seconds)
-    return () => clearInterval(interval);
-  }, []);
+  // Note: Time updates are now handled by LaunchpadContext's 5-second polling
+  // Removed duplicate 5-second interval to avoid redundant updates
   
   // Use launchpad context hooks
   const { isConnected, userStats, loading, error, withdrawUsdt, api, projects, globalCounter } = useLaunchpad();
@@ -64,7 +59,7 @@ const Dashboard = () => {
   const { withdraw, transaction } = useInvestment();
   
   // Use wallet context
-  const { isConnected: walletConnected, l1Account, l2Account } = useWallet();
+  const { isConnected: walletConnected, l1Account, l2Account, deposit } = useWallet();
 
   // Handle token withdrawal
   const handleWithdraw = async (projectId: string) => {
@@ -97,6 +92,36 @@ const Dashboard = () => {
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to withdraw USDT",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Handle USDT deposit
+  const handleUsdtDeposit = async () => {
+    if (!deposit) {
+      toast({
+        title: "Error",
+        description: "Deposit function is not available",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      await deposit({
+        tokenIndex: 0,
+        amount: Number(depositAmount),
+      });
+      toast({
+        title: "Success",
+        description: "USDT deposited successfully to your launchpad balance!",
+      });
+      setDepositAmount("");
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to deposit USDT",
         variant: "destructive",
       });
     }
@@ -428,7 +453,7 @@ const Dashboard = () => {
                 value="withdrawals"
                 className="font-mono font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
               >
-                WITHDRAWALS
+                WALLET
               </TabsTrigger>
             </TabsList>
 
@@ -464,7 +489,7 @@ const Dashboard = () => {
                         </div>
                         <div>
                           <p className="font-mono text-xs text-muted-foreground uppercase">Tokens</p>
-                          <p className="font-mono text-sm font-semibold text-accent">{project.tokensOwned}</p>
+                          <p className="font-mono text-sm font-semibold text-accent break-all">{project.tokensOwned}</p>
                         </div>
                         <div>
                           <p className="font-mono text-xs text-muted-foreground uppercase">Value</p>
@@ -619,14 +644,78 @@ const Dashboard = () => {
               </Card>
             </TabsContent>
 
-            {/* Withdrawals Tab */}
+            {/* Wallet Tab */}
             <TabsContent value="withdrawals" className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* USDT Deposit */}
+                <Card className="card-pixel">
+                  <CardHeader>
+                    <CardTitle className="font-mono text-lg text-gradient-primary">
+                      USDT DEPOSIT
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <label className="font-mono text-sm text-muted-foreground uppercase">
+                        Current Balance
+                      </label>
+                      <div className="text-2xl font-bold font-mono text-accent">
+                        ${dashboardStats.balance}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="font-mono text-sm text-muted-foreground uppercase">
+                        Deposit Contract
+                      </label>
+                      <div className="bg-muted p-3 rounded border">
+                        <p className="font-mono text-sm text-foreground break-all">
+                          {process.env.REACT_APP_DEPOSIT_CONTRACT?.replace(/"/g, '') || "Contract address not configured"}
+                        </p>
+                        {process.env.REACT_APP_DEPOSIT_CONTRACT && (
+                          <a 
+                            href={`https://bscscan.com/address/${process.env.REACT_APP_DEPOSIT_CONTRACT?.replace(/"/g, '')}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 font-mono text-xs text-primary hover:text-primary/80 transition-colors mt-1"
+                          >
+                            View in BSC Scan
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                          </a>
+                        )}
+                        <p className="font-mono text-xs text-muted-foreground mt-1">
+                          USDT will be transferred to this contract address
+                        </p>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="font-mono text-sm text-muted-foreground uppercase">
+                        Amount (USDT)
+                      </label>
+                      <input 
+                        className="w-full input-pixel" 
+                        placeholder="0.00" 
+                        type="number"
+                        value={depositAmount}
+                        onChange={(e) => setDepositAmount(e.target.value)}
+                      />
+                    </div>
+                    <Button 
+                      className="w-full btn-pixel"
+                      onClick={handleUsdtDeposit}
+                      disabled={!depositAmount || loading}
+                    >
+                      {loading ? 'DEPOSITING...' : 'DEPOSIT USDT'}
+                    </Button>
+                  </CardContent>
+                </Card>
+
                 {/* Available Withdrawals */}
                 <Card className="card-pixel">
                   <CardHeader>
                     <CardTitle className="font-mono text-lg text-gradient-primary">
-                      AVAILABLE WITHDRAWALS
+                      AVAILABLE IDO TOKEN WITHDRAWALS
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
