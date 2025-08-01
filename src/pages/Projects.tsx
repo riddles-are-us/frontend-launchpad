@@ -185,7 +185,7 @@ const Projects = () => {
               IDO PROJECTS
             </h1>
             <p className="text-lg font-mono text-muted-foreground">
-              Discover and invest in cutting-edge zkCross projects
+              Discover and invest in cutting-edge ZKCross projects
             </p>
           </div>
 

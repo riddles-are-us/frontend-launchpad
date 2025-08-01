@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../zkwasm-launchpad"
+		},
+		{
+			"path": "../../prediction/frontend-prediction"
+		}
+	],
+	"settings": {}
+}

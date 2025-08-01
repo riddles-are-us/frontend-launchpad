@@ -46,7 +46,7 @@ const Header = () => {
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
             <div className="text-2xl font-bold text-gradient-primary animate-glow">
-              zkCross
+              ZKCross
             </div>
             <div className="text-xl font-mono text-accent">Launchpad</div>
           </Link>

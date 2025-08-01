@@ -8,11 +8,11 @@ const Footer = () => {
           {/* Brand */}
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
-              <div className="text-xl font-bold text-gradient-primary">zkCross</div>
+              <div className="text-xl font-bold text-gradient-primary">ZKCross</div>
               <div className="text-lg font-mono text-accent">Launchpad</div>
             </div>
             <p className="font-mono text-sm text-muted-foreground">
-              The ultimate IDO launchpad for Web3 Applications powered by zkCross technology
+              The ultimate IDO launchpad for Web3 Applications powered by ZKCross technology
             </p>
           </div>
 
@@ -82,7 +82,7 @@ const Footer = () => {
 
         <div className="border-t border-border mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
           <p className="font-mono text-sm text-muted-foreground">
-            © 2024 zkCross Launchpad. All rights reserved.
+            © 2024 ZKCross Launchpad. All rights reserved.
           </p>
           <div className="flex items-center space-x-4 mt-4 md:mt-0">
             <div className="flex items-center space-x-2">

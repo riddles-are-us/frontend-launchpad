@@ -177,7 +177,7 @@ const Home = () => {
         <div className="container mx-auto text-center relative z-10">
           <div className="space-y-6 animate-fadeIn">
             <h1 className="text-4xl md:text-6xl font-bold font-mono text-gradient-rainbow animate-glow">
-              zkCross Launchpad
+              ZKCross Launchpad
             </h1>
             <p className="text-xl md:text-2xl font-mono text-muted-foreground max-w-3xl mx-auto">
               THE ULTIMATE IDO PLATFORM Built with ZKWASM
