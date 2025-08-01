@@ -82,7 +82,7 @@ const Home = () => {
               user: `${investment.pid[0]?.slice(-4) || '????'}...${investment.pid[1]?.slice(-4) || '????'}`,
               action: "invested",
               project: project.tokenSymbol,
-              amount: `${new Intl.NumberFormat('en-US').format(parseFloat(investment.amount))} USDT`,
+              amount: `${new Intl.NumberFormat('en-US').format(parseFloat(investment.amount))} points (~$${(parseFloat(investment.amount) / 100000).toFixed(2)} USDT equivalent)`,
               time: formatTimeAgo(parseInt(investment.timestamp)), // timestamp is counter value
               timestamp: parseInt(investment.timestamp) // Keep as counter for sorting
             }));
@@ -183,7 +183,7 @@ const Home = () => {
               THE ULTIMATE IDO PLATFORM Built with ZKWASM
             </p>
             <p className="text-lg font-mono text-foreground/80 max-w-2xl mx-auto">
-              Invest in cutting-edge Web3 projects with USDT. 
+              Invest in cutting-edge Web3 projects with ZKWASM Points. 
               Dynamic allocation, fair withdrawals, zero fees.
             </p>
             
@@ -229,29 +229,21 @@ const Home = () => {
             <StatCard
               title="Total Projects"
               value={stats.totalProjects}
-              change="+3 this week"
-              changeType="positive"
               className="animate-fadeIn"
             />
             <StatCard
               title="Total Raised"
               value={`$${stats.totalRaised}`}
-              change="+12.5% this month"
-              changeType="positive" 
               className="animate-fadeIn"
             />
             <StatCard
               title="Active Investors"
               value={stats.activeInvestors}
-              change="+234 this week"
-              changeType="positive"
               className="animate-fadeIn"
             />
             <StatCard
               title="Average ROI"
               value={stats.avgRoi}
-              change="Last 30 days"
-              changeType="positive"
               className="animate-fadeIn"
             />
           </div>

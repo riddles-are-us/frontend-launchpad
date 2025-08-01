@@ -14,6 +14,7 @@ import Layout from "@/components/layout/Layout";
 import StatCard from "@/components/ui/StatCard";
 import { useUserPortfolio, useInvestment, useLaunchpad } from "@/contexts/LaunchpadContext";
 import { useWallet } from "@/contexts/WalletContext";
+import { useConnectModal } from "zkwasm-minirollup-browser";
 import { toast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 
@@ -54,12 +55,13 @@ const Dashboard = () => {
   // Removed duplicate 5-second interval to avoid redundant updates
   
   // Use launchpad context hooks
-  const { isConnected, userStats, loading, error, withdrawUsdt, api, projects, globalCounter } = useLaunchpad();
+  const { isConnected, userStats, loading, error, withdrawPoints, api, projects, globalCounter } = useLaunchpad();
   const { positions, transactionHistory, refetch } = useUserPortfolio();
   const { withdraw, transaction } = useInvestment();
   
   // Use wallet context
-  const { isConnected: walletConnected, l1Account, l2Account, deposit } = useWallet();
+  const { isConnected: walletConnected, l1Account, l2Account, deposit, connectL2 } = useWallet();
+  const { openConnectModal } = useConnectModal();
 
   // Handle token withdrawal
   const handleWithdraw = async (projectId: string) => {
@@ -79,26 +81,27 @@ const Dashboard = () => {
     }
   };
 
-  // Handle USDT withdrawal
-  const handleUsdtWithdraw = async () => {
+  // Handle ZKWASM Points withdrawal
+  const handlePointsWithdraw = async () => {
     try {
-      await withdrawUsdt(withdrawAmount);
+      await withdrawPoints(withdrawAmount);
+      const usdtEquivalent = (parseFloat(withdrawAmount) / 100000).toFixed(2);
       toast({
         title: "Success",
-        description: "USDT withdrawn successfully to your wallet!",
+        description: `${withdrawAmount} ZKWASM Points (${usdtEquivalent} USDT equivalent) withdrawn successfully to your wallet!`,
       });
       setWithdrawAmount("");
     } catch (error) {
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to withdraw USDT",
+        description: error instanceof Error ? error.message : "Failed to withdraw ZKWASM Points",
         variant: "destructive",
       });
     }
   };
 
-  // Handle USDT deposit
-  const handleUsdtDeposit = async () => {
+  // Handle ZKWASM Points deposit  
+  const handlePointsDeposit = async () => {
     if (!deposit) {
       toast({
         title: "Error",
@@ -109,19 +112,22 @@ const Dashboard = () => {
     }
 
     try {
+      // Use points amount directly
+      const pointsAmount = Number(depositAmount);
       await deposit({
         tokenIndex: 0,
-        amount: Number(depositAmount),
+        amount: pointsAmount,
       });
+      const usdtEquivalent = (pointsAmount / 100000).toFixed(2);
       toast({
-        title: "Success",
-        description: "USDT deposited successfully to your launchpad balance!",
+        title: "Success", 
+        description: `${pointsAmount} ZKWASM Points (~$${usdtEquivalent} USDT equivalent) deposited successfully to your launchpad balance!`,
       });
       setDepositAmount("");
     } catch (error) {
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to deposit USDT",
+        description: error instanceof Error ? error.message : "Failed to deposit ZKWASM Points",
         variant: "destructive",
       });
     }
@@ -131,7 +137,7 @@ const Dashboard = () => {
   if (loading) {
     return (
       <Layout>
-        <div className="bg-background py-20">
+        <div className="bg-background flex items-center justify-center min-h-[60vh] py-8">
           <div className="container mx-auto px-4 max-w-md">
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
@@ -147,10 +153,10 @@ const Dashboard = () => {
   if (error) {
     return (
       <Layout>
-        <div className="bg-background py-20">
+        <div className="bg-background flex items-center justify-center min-h-[60vh] py-8">
           <div className="container mx-auto px-4 max-w-md">
-            <div className="text-center">
-              <p className="text-destructive font-mono mb-4">Error: {error}</p>
+            <div className="text-center space-y-3">
+              <p className="text-destructive font-mono mb-3">Error: {error}</p>
               <Button onClick={() => window.location.reload()}>Retry</Button>
             </div>
           </div>
@@ -163,28 +169,57 @@ const Dashboard = () => {
   if (!walletConnected || !l2Account) {
     return (
       <Layout>
-        <div className="bg-background py-12">
+        <div className="bg-background flex items-center justify-center min-h-[60vh] py-8">
           <div className="container mx-auto px-4 max-w-md">
-            <div className="text-center space-y-6">
-                <div className="mb-4">
-                  <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="text-center space-y-3">
+                <div className="mb-2">
+                  <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-2">
                     {/* <Wallet className="h-8 w-8 text-muted-foreground" /> */}
                   </div>
                   <h2 className="text-2xl font-mono font-bold text-gradient-primary mb-2">
                     Wallet Connection Required
                   </h2>
-                  <p className="text-muted-foreground font-mono mb-6">
+                  <p className="text-muted-foreground font-mono mb-3">
                     {!walletConnected 
                       ? "Please connect your wallet to access the dashboard" 
                       : "Please connect to L2 to access the dashboard"}
                   </p>
                 </div>
                 
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <p className="text-sm font-mono text-muted-foreground">
-                  Use the wallet button in the header to connect
+                  Connect your wallet to access the dashboard
                 </p>
-                <div className="flex justify-center">
+                <div className="flex flex-col sm:flex-row justify-center gap-3">
+                  {!walletConnected ? (
+                    <Button 
+                      onClick={() => openConnectModal?.()}
+                      className="btn-pixel"
+                    >
+                      CONNECT WALLET
+                    </Button>
+                  ) : (
+                    <Button 
+                      onClick={async () => {
+                        try {
+                          await connectL2();
+                          toast({
+                            title: "Success",
+                            description: "Connected to L2 successfully!",
+                          });
+                        } catch (error) {
+                          toast({
+                            title: "Error",
+                            description: "Failed to connect to L2",
+                            variant: "destructive",
+                          });
+                        }
+                      }}
+                      className="btn-pixel"
+                    >
+                      CONNECT LAUNCHPAD
+                    </Button>
+                  )}
                   <Link to="/">
                     <Button variant="outline" className="btn-pixel-secondary">
                       GO TO HOME
@@ -295,10 +330,10 @@ const Dashboard = () => {
   
   // Map transaction history with project names
   const transactionHistoryData = transactionHistory.map(tx => {
-    // Map project ID to project name (0 = USDT, other IDs map to project names)
+    // Map project ID to project name (0 = ZKWASM Points, other IDs map to project names)
     let projectName = 'Unknown Project';
     if (tx.project === '0') {
-      projectName = 'USDT';
+      projectName = 'ZKWASM Points';
     } else {
       // Find project by ID
       const project = projects.find(p => p.projectId === tx.project);
@@ -394,7 +429,7 @@ const Dashboard = () => {
 
   return (
     <Layout>
-      <div className="min-h-screen bg-background py-8">
+      <div className="bg-background py-6">
         <div className="container mx-auto px-4">
           {/* Header */}
           <div className="mb-8">
@@ -409,9 +444,9 @@ const Dashboard = () => {
           {/* Stats Overview */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <StatCard
-              title="USDT Balance"
-              value={`$${dashboardStats.balance}`}
-              change="Available for investment"
+              title="ZKWASM Points Balance"
+              value={`${dashboardStats.balance} points`}
+              change={`~$${(parseFloat(dashboardStats.balance) / 100000).toFixed(2)} USDT equivalent`}
               changeType="neutral"
             />
             <StatCard
@@ -515,7 +550,7 @@ const Dashboard = () => {
                                 Oversubscribed Project
                               </p>
                               <p className="font-mono text-xs text-warning/80">
-                                Refund: ${project.refundAmount} USDT will be returned to your launchpad balance when withdrawing tokens.
+                                Refund: {project.refundAmount} ZKWASM Points (~${(parseFloat(project.refundAmount) / 100000).toFixed(2)} USDT equivalent) will be returned to your launchpad balance when withdrawing tokens.
                               </p>
                             </div>
                           </div>
@@ -647,11 +682,11 @@ const Dashboard = () => {
             {/* Wallet Tab */}
             <TabsContent value="withdrawals" className="space-y-6">
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* USDT Deposit */}
+                {/* ZKWASM Points Deposit */}
                 <Card className="card-pixel">
                   <CardHeader>
                     <CardTitle className="font-mono text-lg text-gradient-primary">
-                      USDT DEPOSIT
+                      ZKWASM POINTS DEPOSIT
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
@@ -660,7 +695,10 @@ const Dashboard = () => {
                         Current Balance
                       </label>
                       <div className="text-2xl font-bold font-mono text-accent">
-                        ${dashboardStats.balance}
+                        {dashboardStats.balance} points
+                      </div>
+                      <div className="text-sm font-mono text-muted-foreground">
+                        (~${(parseFloat(dashboardStats.balance) / 100000).toFixed(2)} USDT equivalent)
                       </div>
                     </div>
                     <div className="space-y-2">
@@ -685,28 +723,31 @@ const Dashboard = () => {
                           </a>
                         )}
                         <p className="font-mono text-xs text-muted-foreground mt-1">
-                          USDT will be transferred to this contract address
+                          Deposit ZKWASM Points directly to your launchpad balance
                         </p>
                       </div>
                     </div>
                     <div className="space-y-2">
                       <label className="font-mono text-sm text-muted-foreground uppercase">
-                        Amount (USDT)
+                        Amount (ZKWASM Points)
                       </label>
                       <input 
                         className="w-full input-pixel" 
-                        placeholder="0.00" 
+                        placeholder="100000" 
                         type="number"
                         value={depositAmount}
                         onChange={(e) => setDepositAmount(e.target.value)}
                       />
+                      <div className="text-xs font-mono text-muted-foreground">
+                        ~${(parseFloat(depositAmount || "0") / 100000).toFixed(2)} USDT equivalent
+                      </div>
                     </div>
                     <Button 
                       className="w-full btn-pixel"
-                      onClick={handleUsdtDeposit}
+                      onClick={handlePointsDeposit}
                       disabled={!depositAmount || loading}
                     >
-                      {loading ? 'DEPOSITING...' : 'DEPOSIT USDT'}
+                      {loading ? 'DEPOSITING...' : 'DEPOSIT ZKWASM POINTS'}
                     </Button>
                   </CardContent>
                 </Card>
@@ -749,11 +790,11 @@ const Dashboard = () => {
                   </CardContent>
                 </Card>
 
-                {/* USDT Withdrawal */}
+                {/* ZKWASM Points Withdrawal */}
                 <Card className="card-pixel">
                   <CardHeader>
                     <CardTitle className="font-mono text-lg text-gradient-secondary">
-                      USDT WITHDRAWAL
+                      ZKWASM POINTS WITHDRAWAL
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
@@ -762,7 +803,10 @@ const Dashboard = () => {
                         Available Balance
                       </label>
                       <div className="text-2xl font-bold font-mono text-accent">
-                        ${dashboardStats.balance}
+                        {dashboardStats.balance} points
+                      </div>
+                      <div className="text-sm font-mono text-muted-foreground">
+                        (~${(parseFloat(dashboardStats.balance) / 100000).toFixed(2)} USDT equivalent)
                       </div>
                     </div>
                                         <div className="space-y-2">
@@ -774,28 +818,31 @@ const Dashboard = () => {
                           {l1Account?.address || 'Connect wallet to see address'}
                         </p>
                         <p className="font-mono text-xs text-muted-foreground mt-1">
-                          USDT will be sent to your connected wallet
+                          ZKWASM Points will be withdrawn to your connected wallet
                         </p>
                       </div>
                     </div>
                     <div className="space-y-2">
                       <label className="font-mono text-sm text-muted-foreground uppercase">
-                        Amount (USDT)
+                        Amount (ZKWASM Points)
                       </label>
                       <input 
                         className="w-full input-pixel" 
-                        placeholder="0.00" 
+                        placeholder="0" 
                         type="number"
                         value={withdrawAmount}
                         onChange={(e) => setWithdrawAmount(e.target.value)}
                       />
+                      <div className="text-xs font-mono text-muted-foreground">
+                        ~${(parseFloat(withdrawAmount || "0") / 100000).toFixed(2)} USDT equivalent
+                      </div>
                     </div>
                     <Button 
                       className="w-full btn-pixel-secondary"
-                      onClick={handleUsdtWithdraw}
-                                              disabled={!withdrawAmount || loading}
+                      onClick={handlePointsWithdraw}
+                      disabled={!withdrawAmount || loading}
                     >
-                      {loading ? 'WITHDRAWING...' : 'WITHDRAW USDT'}
+                      {loading ? 'WITHDRAWING...' : 'WITHDRAW ZKWASM POINTS'}
                     </Button>
                   </CardContent>
                 </Card>

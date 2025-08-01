@@ -143,13 +143,11 @@ const Projects = () => {
   if (loading || (!projects.length && publicLoading)) {
     return (
       <Layout>
-        <div className="min-h-screen bg-background py-8">
+        <div className="bg-background flex items-center justify-center min-h-[60vh] py-8">
           <div className="container mx-auto px-4">
-            <div className="flex items-center justify-center min-h-[400px]">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-                <p className="text-muted-foreground font-mono">Loading projects...</p>
-              </div>
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+              <p className="text-muted-foreground font-mono">Loading projects...</p>
             </div>
           </div>
         </div>
@@ -159,7 +157,7 @@ const Projects = () => {
 
   return (
     <Layout>
-      <div className="min-h-screen bg-background py-8">
+      <div className="bg-background py-6">
         <div className="container mx-auto px-4">
           {/* Header */}
           <div className="mb-8">
@@ -302,12 +300,12 @@ const Projects = () => {
 
           {/* Empty State */}
           {sortedProjects.length === 0 && (
-            <div className="text-center py-16">
+            <div className="text-center py-8">
               <div className="text-6xl mb-4">🔍</div>
               <h3 className="text-xl font-mono font-semibold text-muted-foreground mb-2">
                 No projects found
               </h3>
-              <p className="font-mono text-muted-foreground mb-6">
+              <p className="font-mono text-muted-foreground mb-4">
                 Try adjusting your filters or search terms
               </p>
               <Button

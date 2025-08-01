@@ -114,6 +114,44 @@ const Header = () => {
             </Button>
           </div>
         </div>
+        
+        {/* Mobile Navigation */}
+        <div className="md:hidden border-t border-border/50 mt-4 pt-3">
+          <nav className="flex items-center justify-center space-x-6">
+            <Link 
+              to="/" 
+              className={`font-mono text-xs uppercase tracking-wider transition-colors ${
+                location.pathname === '/' ? 'text-primary' : 'text-foreground hover:text-primary'
+              }`}
+            >
+              Home
+            </Link>
+            <Link 
+              to="/projects" 
+              className={`font-mono text-xs uppercase tracking-wider transition-colors ${
+                location.pathname === '/projects' ? 'text-primary' : 'text-foreground hover:text-primary'
+              }`}
+            >
+              Projects
+            </Link>
+            <Link 
+              to="/dashboard" 
+              className={`font-mono text-xs uppercase tracking-wider transition-colors ${
+                location.pathname === '/dashboard' ? 'text-primary' : 'text-foreground hover:text-primary'
+              }`}
+            >
+              Dashboard
+            </Link>
+            <a 
+              href="https://staking.zkwasm.ai/" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="font-mono text-xs uppercase tracking-wider transition-colors text-foreground hover:text-primary"
+            >
+              Staking
+            </a>
+          </nav>
+        </div>
       </div>
     </header>
   );

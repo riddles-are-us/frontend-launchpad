@@ -18,9 +18,9 @@ export const API_CONFIG = {
   
   // Default values
   defaults: {
-    // Default investment amount
-    minInvestmentAmount: "10", // USDT
-    maxInvestmentAmount: "100000", // USDT
+    // Default investment amount (matching backend config.rs)
+    minInvestmentAmount: "100000", // 100K points = 1 USDT (MIN_INVESTMENT_AMOUNT)
+    maxInvestmentAmount: "300000000", // 300M points = 3K USDT (MAX_INDIVIDUAL_CAP)
     
     // Pagination
     projectsPerPage: 12,

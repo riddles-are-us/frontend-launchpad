@@ -32,7 +32,7 @@ Located in `src/services/api.ts`, provides:
 - `getUserStats(pid1, pid2)` - Get user statistics and balances
 - `investInProject(projectId, amount)` - Invest in a project
 - `withdrawTokens(projectId)` - Withdraw allocated tokens
-- `withdrawUsdt(amount, address)` - Withdraw USDT to external address
+- `withdrawPoints(amount, address)` - Withdraw ZKWASM Points to external address
 
 #### Context Provider
 `src/contexts/LaunchpadContext.tsx` provides:

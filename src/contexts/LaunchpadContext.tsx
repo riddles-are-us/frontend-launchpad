@@ -65,7 +65,7 @@ export const LaunchpadProvider: React.FC<LaunchpadProviderProps> = ({ children, 
             return 'Investment exceeds the maximum individual cap for this project.';
         }
         if (errorMessage.includes('InsufficientBalance')) {
-            return 'Insufficient balance. Please deposit more USDT to continue.';
+            return 'Insufficient balance. Please deposit more ZKWASM Points to continue.';
         }
         if (errorMessage.includes('IdoNotActive')) {
             return 'This IDO is not currently active for investments.';
@@ -373,13 +373,14 @@ export const LaunchpadProvider: React.FC<LaunchpadProviderProps> = ({ children, 
                         console.log('LaunchpadContext: Parsed RPC data:', parsedData);
                         
                         if (parsedData.player && parsedData.player.data && parsedData.player.data.balance) {
-                            // Don't convert balance, use raw value for now to see what it should be
+                            // Display balance as points with USDT equivalent
                             const balanceRaw = BigInt(parsedData.player.data.balance);
-                            const balanceUSDT = Number(balanceRaw).toFixed(2); // No division, use raw value
-                            currentBalance = balanceUSDT;
-                            setUserBalance(balanceUSDT);
+                            const balancePoints = Number(balanceRaw).toFixed(0); // Display as points
+                            const balanceUSDTEquivalent = (Number(balanceRaw) / 100000).toFixed(2); // Convert to USDT equivalent
+                            currentBalance = balancePoints;
+                            setUserBalance(balancePoints);
                             console.log('LaunchpadContext: Raw balance:', balanceRaw);
-                            console.log('LaunchpadContext: Display balance:', balanceUSDT, 'USDT');
+                            console.log('LaunchpadContext: Display balance:', balancePoints, 'points (', balanceUSDTEquivalent, 'USDT equivalent)');
                         } else {
                             console.log('LaunchpadContext: No player balance found in RPC response');
                             setUserBalance("0.00");
@@ -622,8 +623,8 @@ export const LaunchpadProvider: React.FC<LaunchpadProviderProps> = ({ children, 
         }
     }, [api, isConnected, fallbackInitialized, refreshData]);
 
-    // Withdraw USDT to user's L1 address
-    const withdrawUsdt = useCallback(async (amount: string) => {
+    // Withdraw ZKWASM Points to user's L1 address
+    const withdrawPoints = useCallback(async (amount: string) => {
         if (!api) {
             throw new Error('API not available');
         }
@@ -635,9 +636,9 @@ export const LaunchpadProvider: React.FC<LaunchpadProviderProps> = ({ children, 
         }
 
         try {
-            setTransactionState({ status: 'PENDING', type: 'WITHDRAW_USDT' });
+            setTransactionState({ status: 'PENDING', type: 'WITHDRAW_POINTS' });
             
-            const amountBigInt = BigInt(parseFloat(amount)); // Removed * 1e6, use raw amount
+            const amountBigInt = BigInt(parseFloat(amount)); // Use points amount directly
             
             // Use user's L1 address automatically
             const address = l1Account.address.replace('0x', ''); // Remove 0x prefix
@@ -645,9 +646,9 @@ export const LaunchpadProvider: React.FC<LaunchpadProviderProps> = ({ children, 
             const addressHigh = addressBigInt >> 128n;
             const addressLow = addressBigInt & ((1n << 128n) - 1n);
             
-            const result = await api.withdrawUsdt(amountBigInt, addressHigh, addressLow);
+            const result = await api.withdrawPoints(amountBigInt, addressHigh, addressLow);
             
-            setTransactionState({ status: 'SUCCESS', type: 'WITHDRAW_USDT' });
+            setTransactionState({ status: 'SUCCESS', type: 'WITHDRAW_POINTS' });
             
             // Refresh data after successful withdrawal
             await refreshData();
@@ -655,7 +656,7 @@ export const LaunchpadProvider: React.FC<LaunchpadProviderProps> = ({ children, 
             return result;
         } catch (error) {
             const friendlyErrorMessage = getErrorMessage(error);
-            setTransactionState({ status: 'ERROR', type: 'WITHDRAW_USDT', error: friendlyErrorMessage });
+            setTransactionState({ status: 'ERROR', type: 'WITHDRAW_POINTS', error: friendlyErrorMessage });
             throw new Error(friendlyErrorMessage);
         }
     }, [api, isConnected, fallbackInitialized, refreshData, l1Account]);
@@ -682,7 +683,7 @@ export const LaunchpadProvider: React.FC<LaunchpadProviderProps> = ({ children, 
         refreshData: () => Promise.resolve(refreshData(true)),
         investInProject,
         withdrawTokens,
-        withdrawUsdt
+        withdrawPoints
     };
 
     return (
@@ -719,11 +720,11 @@ export const useUserPortfolio = () => {
 };
 
 export const useInvestment = () => {
-    const { investInProject, withdrawTokens, withdrawUsdt, transactionState } = useLaunchpad();
+    const { investInProject, withdrawTokens, withdrawPoints, transactionState } = useLaunchpad();
     return { 
         invest: investInProject, 
         withdraw: withdrawTokens, 
-        withdrawUsdt, 
+        withdrawPoints, 
         transaction: transactionState 
     };
 };

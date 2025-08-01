@@ -199,13 +199,19 @@ const ProjectCard = ({ project, globalCounter, className = '', style, onInvest }
           <div className="space-y-1">
             <p className="font-mono text-xs text-muted-foreground uppercase">Target</p>
             <p className="font-mono text-sm font-semibold text-foreground">
-              {formatAmount(project.targetAmount)} USDT
+              {formatAmount(project.targetAmount)} points
+            </p>
+            <p className="font-mono text-xs text-muted-foreground">
+              (~${(parseFloat(project.targetAmount) / 100000).toFixed(0)} USDT equivalent)
             </p>
           </div>
           <div className="space-y-1">
             <p className="font-mono text-xs text-muted-foreground uppercase">Raised</p>
             <p className="font-mono text-sm font-semibold text-accent">
-              {formatAmount(project.totalRaised)} USDT
+              {formatAmount(project.totalRaised)} points
+            </p>
+            <p className="font-mono text-xs text-muted-foreground">
+              (~${(parseFloat(project.totalRaised) / 100000).toFixed(0)} USDT equivalent)
             </p>
           </div>
         </div>
@@ -223,6 +229,9 @@ const ProjectCard = ({ project, globalCounter, className = '', style, onInvest }
             <p className="font-mono text-sm font-semibold text-secondary">
               {calculateAndFormatTokenPrice(project.targetAmount, project.tokenSupply)} USDT
             </p>
+            <p className="font-mono text-xs text-muted-foreground">
+              ({(parseFloat(calculateAndFormatTokenPrice(project.targetAmount, project.tokenSupply)) * 100000).toLocaleString()} points per token)
+            </p>
           </div>
         </div>
         
@@ -231,7 +240,10 @@ const ProjectCard = ({ project, globalCounter, className = '', style, onInvest }
           <div className="space-y-1">
             <p className="font-mono text-xs text-muted-foreground uppercase">Max Individual Cap</p>
             <p className="font-mono text-sm font-semibold text-warning">
-              {formatAmount(project.maxIndividualCap)} USDT
+              {formatAmount(project.maxIndividualCap)} points
+            </p>
+            <p className="font-mono text-xs text-muted-foreground">
+              (~${(parseFloat(project.maxIndividualCap) / 100000).toFixed(0)} USDT equivalent)
             </p>
           </div>
           <div className="space-y-1">
@@ -291,7 +303,7 @@ const ProjectCard = ({ project, globalCounter, className = '', style, onInvest }
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="amount" className="font-mono text-sm">
-                    Investment Amount (Min 10 USDT)
+                    Investment Amount (Min 100K ZKWASM Points / ~$1 USDT equivalent)
                   </Label>
                   <Input
                     id="amount"

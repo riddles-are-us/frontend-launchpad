@@ -97,7 +97,7 @@ export type TransactionStatus = 'IDLE' | 'PENDING' | 'LOADING' | 'SUCCESS' | 'ER
 
 export interface TransactionState {
     status: TransactionStatus;
-    type?: 'INVEST' | 'WITHDRAW_TOKENS' | 'WITHDRAW_USDT';
+    type?: 'INVEST' | 'WITHDRAW_TOKENS' | 'WITHDRAW_POINTS';
     error?: string;
     txHash?: string;
 }
@@ -129,7 +129,7 @@ export interface LaunchpadContextType {
     refreshData: () => Promise<void>;
     investInProject: (projectId: string, amount: string) => Promise<any>;
     withdrawTokens: (projectId: string) => Promise<any>;
-    withdrawUsdt: (amount: string) => Promise<any>;
+    withdrawPoints: (amount: string) => Promise<any>;
 }
 
 // Hook return types

@@ -7,8 +7,8 @@ const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://localhost:300
 // Command constants for IDO launchpad (matching backend)
 const TICK = 0;
 const INSTALL_PLAYER = 1;
-const WITHDRAW_USDT = 2;
-const DEPOSIT_USDT = 3;
+const WITHDRAW_POINTS = 2;
+const DEPOSIT_POINTS = 3;
 const INVEST = 4;
 const WITHDRAW_TOKENS = 5;
 const CREATE_IDO = 6;
@@ -127,7 +127,7 @@ export class LaunchpadAPI extends PlayerConvention {
     
     constructor(config: ServerConfig) {
         const rpc = new ZKWasmAppRpc(config.serverUrl);
-        super(config.privkey, rpc, BigInt(DEPOSIT_USDT), BigInt(WITHDRAW_USDT));
+        super(config.privkey, rpc, BigInt(DEPOSIT_POINTS), BigInt(WITHDRAW_POINTS));
         this.privkey = config.privkey;
         this.rpc = rpc;
         this.processingKey = config.privkey;
@@ -175,10 +175,10 @@ export class LaunchpadAPI extends PlayerConvention {
         return await this.sendTransactionWithCommand(cmd);
     }
 
-    // Withdraw USDT to external address
-    async withdrawUsdt(amount: bigint, addressHigh: bigint, addressLow: bigint): Promise<any> {
+    // Withdraw ZKWASM Points to external address
+    async withdrawPoints(amount: bigint, addressHigh: bigint, addressLow: bigint): Promise<any> {
         let nonce = await this.getNonce();
-        let cmd = createCommand(nonce, BigInt(WITHDRAW_USDT), [0n, amount, addressHigh, addressLow]);
+        let cmd = createCommand(nonce, BigInt(WITHDRAW_POINTS), [0n, amount, addressHigh, addressLow]);
         return await this.sendTransactionWithCommand(cmd);
     }
 
