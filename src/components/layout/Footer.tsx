@@ -4,7 +4,7 @@ const Footer = () => {
   return (
     <footer className="border-t-2 border-border bg-background mt-20">
       <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Brand */}
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
@@ -29,6 +29,14 @@ const Footer = () => {
               <Link to="/dashboard" className="font-mono text-sm text-muted-foreground hover:text-primary transition-colors">
                 Dashboard
               </Link>
+              <a 
+                href="https://staking.zkwasm.ai/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="font-mono text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
+                Staking
+              </a>
             </div>
           </div>
 
@@ -76,6 +84,19 @@ const Footer = () => {
               >
                 📨 Telegram
               </a>
+            </div>
+          </div>
+
+          {/* Disclaimer */}
+          <div className="space-y-4">
+            <h3 className="font-mono font-semibold text-warning uppercase tracking-wider">Disclaimer</h3>
+            <div className="space-y-3">
+              <p className="font-mono text-xs text-muted-foreground leading-relaxed">
+                ⚠️ <strong className="text-warning">High Risk Investment:</strong> IDO projects involve significant financial risk. Past performance does not guarantee future results.
+              </p>
+              <p className="font-mono text-xs text-muted-foreground leading-relaxed">
+                🪙 <strong className="text-primary">ZKWASM Points:</strong> Virtual credits for platform use only. 100,000 points = 1 USDT equivalent for calculation purposes.
+              </p>
             </div>
           </div>
         </div>

@@ -2,6 +2,13 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { 
   Pagination, 
   PaginationContent, 
@@ -49,6 +56,13 @@ const Dashboard = () => {
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [depositAmount, setDepositAmount] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [showPointsDialog, setShowPointsDialog] = useState(false);
+  const [hasSeenPointsDialog, setHasSeenPointsDialog] = useState(false);
+
+  // Reset dialog seen status when component mounts (entering dashboard)
+  useEffect(() => {
+    setHasSeenPointsDialog(false);
+  }, []); // Empty dependency array means this runs only on mount
   const itemsPerPage = 10;
 
   // Note: Time updates are now handled by LaunchpadContext's 5-second polling
@@ -62,6 +76,21 @@ const Dashboard = () => {
   // Use wallet context
   const { isConnected: walletConnected, l1Account, l2Account, deposit, connectL2 } = useWallet();
   const { openConnectModal } = useConnectModal();
+
+  // Check if user has zero points and show dialog - must be before early returns
+  useEffect(() => {
+    if (walletConnected && l2Account && !showPointsDialog && !hasSeenPointsDialog) {
+      // Check if user has zero points or no balance data
+      const balance = userStats && userStats.balance ? parseFloat(userStats.balance) : 0;
+      console.log('Points dialog check - balance:', balance, 'userStats:', userStats);
+      
+      if (balance === 0) {
+        console.log('Showing points dialog - zero balance detected');
+        setShowPointsDialog(true);
+        setHasSeenPointsDialog(true); // Mark as seen when showing
+      }
+    }
+  }, [walletConnected, l2Account, userStats, showPointsDialog, hasSeenPointsDialog]);
 
   // Handle token withdrawal
   const handleWithdraw = async (projectId: string) => {
@@ -851,6 +880,66 @@ const Dashboard = () => {
           </Tabs>
         </div>
       </div>
+
+      {/* Zero Points Dialog */}
+      <Dialog open={showPointsDialog} onOpenChange={setShowPointsDialog}>
+        <DialogContent className="card-pixel max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-mono text-gradient-primary text-center">
+              🪙 No ZKWASM Points Found
+            </DialogTitle>
+            <DialogDescription className="font-mono text-center space-y-3">
+              <p className="text-muted-foreground">
+                You need ZKWASM Points to participate in IDO projects.
+              </p>
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 mt-4">
+            <div className="bg-muted/50 p-4 rounded-lg space-y-4">
+              <h4 className="font-mono font-semibold text-primary">Option 1: Already have Points?</h4>
+              <p className="font-mono text-xs text-muted-foreground">
+                If you already have ZKWASM Points in your wallet, deposit them to your Launchpad balance.
+              </p>
+              <Button 
+                onClick={() => {
+                  setActiveTab("withdrawals");
+                  setShowPointsDialog(false);
+                }}
+                className="w-full btn-pixel"
+              >
+                💳 DEPOSIT FROM WALLET
+              </Button>
+            </div>
+            
+            <div className="bg-muted/50 p-4 rounded-lg space-y-4">
+              <h4 className="font-mono font-semibold text-accent">Option 2: Get Points First</h4>
+              <p className="font-mono text-xs text-muted-foreground">
+                Stake your tokens to earn ZKWASM Points, then withdraw to your wallet and deposit to Launchpad.
+              </p>
+              <a 
+                href="https://staking.zkwasm.ai/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                onClick={() => setShowPointsDialog(false)}
+                className="block mt-4"
+              >
+                <Button className="w-full btn-pixel-accent">
+                  🚀 GO TO STAKING
+                </Button>
+              </a>
+            </div>
+            
+            <Button 
+              variant="outline" 
+              onClick={() => setShowPointsDialog(false)}
+              className="w-full btn-pixel-secondary"
+            >
+              I'll do this later
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 };
