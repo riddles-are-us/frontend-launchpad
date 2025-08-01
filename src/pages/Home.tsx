@@ -316,7 +316,9 @@ const Home = () => {
               </div>
             )) : (
               <div className="text-center py-8">
-                <div className="w-8 h-8 bg-muted rounded-full mx-auto mb-4 animate-pixel-pulse"></div>
+                <div className="w-8 h-8 bg-muted rounded-full mx-auto mb-4 animate-pixel-pulse flex items-center justify-center overflow-hidden">
+                  <img src="/favicon.ico" alt="ZKCross" className="w-5 h-5" />
+                </div>
                 <p className="font-mono text-sm text-muted-foreground">
                   {api ? "No recent investment activity" : "Loading live activity..."}
                 </p>

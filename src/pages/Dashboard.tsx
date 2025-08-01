@@ -202,8 +202,8 @@ const Dashboard = () => {
           <div className="container mx-auto px-4 max-w-md">
             <div className="text-center space-y-3">
                 <div className="mb-2">
-                  <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-2">
-                    {/* <Wallet className="h-8 w-8 text-muted-foreground" /> */}
+                  <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-2 overflow-hidden">
+                    <img src="/favicon.ico" alt="ZKCross" className="w-10 h-10" />
                   </div>
                   <h2 className="text-2xl font-mono font-bold text-gradient-primary mb-2">
                     Wallet Connection Required
