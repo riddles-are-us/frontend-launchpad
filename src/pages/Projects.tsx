@@ -157,24 +157,6 @@ const Projects = () => {
     );
   }
 
-  // Show error state  
-  if (error || (!projects.length && publicError)) {
-    return (
-      <Layout>
-        <div className="min-h-screen bg-background py-8">
-          <div className="container mx-auto px-4">
-            <div className="flex items-center justify-center min-h-[400px]">
-              <div className="text-center">
-                <p className="text-destructive font-mono mb-4">Error: {error || publicError}</p>
-                <Button onClick={() => refreshData()}>Retry</Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </Layout>
-    );
-  }
-
   return (
     <Layout>
       <div className="min-h-screen bg-background py-8">

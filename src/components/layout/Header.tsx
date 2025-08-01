@@ -77,6 +77,14 @@ const Header = () => {
             >
               Dashboard
             </Link>
+            <a 
+              href="https://staking.zkwasm.ai/" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="font-mono text-sm uppercase tracking-wider transition-colors text-foreground hover:text-primary"
+            >
+              Staking
+            </a>
 
           </nav>
 
