@@ -341,12 +341,17 @@ const ProjectCard = ({ project, globalCounter, className = '', style, onInvest }
                     className="input-pixel"
                   />
                   {investAmount && parseFloat(investAmount) > 0 && (
-                    <div className="bg-muted/20 p-3 rounded border">
-                      <div className="space-y-1">
-                        <p className="font-mono text-xs text-muted-foreground">Expected Tokens:</p>
-                        <p className="font-mono text-sm font-semibold text-primary">
-                          {calculateExpectedTokens(investAmount, project.targetAmount, project.tokenSupply)} {project.tokenSymbol}
-                        </p>
+                    <div className="space-y-2">
+                      <div className="text-sm font-mono text-muted-foreground">
+                        ~${(parseFloat(investAmount) / 100000).toFixed(2)} USDT equivalent
+                      </div>
+                      <div className="bg-muted/20 p-3 rounded border">
+                        <div className="space-y-1">
+                          <p className="font-mono text-xs text-muted-foreground">Expected Tokens:</p>
+                          <p className="font-mono text-sm font-semibold text-primary">
+                            {calculateExpectedTokens(investAmount, project.targetAmount, project.tokenSupply)} {project.tokenSymbol}
+                          </p>
+                        </div>
                       </div>
                     </div>
                   )}

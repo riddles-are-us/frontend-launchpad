@@ -482,13 +482,13 @@ const Dashboard = () => {
               title="Total Invested"
               value={`${parseFloat(dashboardStats.totalInvested).toLocaleString()} points`}
               change={`~$${(parseFloat(dashboardStats.totalInvested) / 100000).toFixed(2)} USDT equivalent • ${dashboardStats.totalProjects} projects`}
-              changeType="positive"
+              changeType="neutral"
             />
             <StatCard
               title="Portfolio Value"
               value={`${parseFloat(dashboardStats.portfolioValue).toLocaleString()} points`}
               change={`~$${(parseFloat(dashboardStats.portfolioValue) / 100000).toFixed(2)} USDT equivalent${dashboardStats.unrealizedGains === "0" || dashboardStats.unrealizedGains === "0.00" || parseFloat(dashboardStats.unrealizedGains || "0") === 0 ? " • No gains/losses" : ` • ${dashboardStats.unrealizedGains}`}`}
-              changeType="positive"
+              changeType="neutral"
             />
             <StatCard
               title="Total Tokens"
@@ -548,22 +548,22 @@ const Dashboard = () => {
                     <CardContent className="space-y-4">
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <p className="font-mono text-xs text-muted-foreground uppercase">Invested</p>
-                          <p className="font-mono text-sm font-semibold">{parseFloat(project.invested).toLocaleString()} points</p>
+                          <p className="font-mono text-xs text-foreground font-bold uppercase tracking-wider">Invested</p>
+                          <p className="font-mono text-sm">{parseFloat(project.invested).toLocaleString()} points</p>
                           <p className="font-mono text-xs text-muted-foreground">~${(parseFloat(project.invested) / 100000).toFixed(2)} USDT equivalent</p>
                         </div>
                         <div>
-                          <p className="font-mono text-xs text-muted-foreground uppercase">Tokens</p>
-                          <p className="font-mono text-sm font-semibold text-accent break-all">{project.tokensOwned}</p>
+                          <p className="font-mono text-xs text-foreground font-bold uppercase tracking-wider">Tokens</p>
+                          <p className="font-mono text-sm text-accent break-all">{project.tokensOwned}</p>
                         </div>
                         <div>
-                          <p className="font-mono text-xs text-muted-foreground uppercase">Value</p>
-                          <p className="font-mono text-sm font-semibold">{parseFloat(project.currentValue).toLocaleString()} points</p>
+                          <p className="font-mono text-xs text-foreground font-bold uppercase tracking-wider">Value</p>
+                          <p className="font-mono text-sm">{parseFloat(project.currentValue).toLocaleString()} points</p>
                           <p className="font-mono text-xs text-muted-foreground">~${(parseFloat(project.currentValue) / 100000).toFixed(2)} USDT equivalent</p>
                         </div>
                         <div>
-                          <p className="font-mono text-xs text-muted-foreground uppercase">P&L</p>
-                          <p className={`font-mono text-sm font-semibold ${
+                          <p className="font-mono text-xs text-foreground font-bold uppercase tracking-wider">P&L</p>
+                          <p className={`font-mono text-sm ${
                             project.gainLoss.startsWith('+') ? 'text-success' : 'text-destructive'
                           }`}>
                             {project.gainLoss} ({project.gainLossPercent})

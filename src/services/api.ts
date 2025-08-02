@@ -344,9 +344,14 @@ export class LaunchpadAPI extends PlayerConvention {
             let totalTokens = 0;
 
             for (const position of positions) {
-                // This would need real-time token pricing in a production app
+                // Calculate actual token allocation based on 80% distributable supply
+                const userInvestment = BigInt(position.investedAmount);
+                
+                // We need project data to calculate proper allocation
+                // For now, use invested amount as portfolio value (placeholder)
+                // In production, this should fetch current token prices and calculate real value
                 portfolioValue += parseFloat(position.investedAmount);
-                totalTokens += 1; // Placeholder - would need actual token count
+                totalTokens += 1; // Placeholder - would need actual token count from allocation calculation
             }
 
             const unrealizedGains = portfolioValue - totalInvested;
@@ -513,7 +518,9 @@ export class LaunchpadAPI extends PlayerConvention {
 
     private calculateTokenPrice(targetAmount: bigint, tokenSupply: bigint): string {
         if (tokenSupply === 0n) return "0";
-        return (Number(targetAmount) / Number(tokenSupply)).toFixed(6);
+        // Use 80% of token supply for price calculation (20% reserved for liquidity)
+        const distributableSupply = (tokenSupply * 80n) / 100n;
+        return (Number(targetAmount) / Number(distributableSupply)).toFixed(6);
     }
 
     private stringToU64Array(str: string): bigint[] {
@@ -548,7 +555,7 @@ export class LaunchpadAPI extends PlayerConvention {
         return result;
     }
 
-    // Calculate token allocation for user
+    // Calculate token allocation for user (using 80% distributable supply)
     calculateTokenAllocation(
         userInvestment: bigint,
         totalRaised: bigint,
@@ -560,16 +567,19 @@ export class LaunchpadAPI extends PlayerConvention {
             return { allocatedTokens: 0n, refundAmount: 0n };
         }
 
+        // Use 80% of token supply for allocation (20% reserved for liquidity)
+        const distributableSupply = (tokenSupply * 80n) / 100n;
+
         if (isOverSubscribed) {
             // Over-subscribed - calculate proportional allocation and refund
             const allocationRatio = (targetAmount * 1000000n) / totalRaised; // Using precision
             const allocatedInvestment = (userInvestment * allocationRatio) / 1000000n;
-            const allocatedTokens = (allocatedInvestment * tokenSupply) / targetAmount;
+            const allocatedTokens = (allocatedInvestment * distributableSupply) / targetAmount;
             const refundAmount = userInvestment - allocatedInvestment;
             return { allocatedTokens, refundAmount };
         } else {
             // Normal allocation - no refund
-            const allocatedTokens = (userInvestment * tokenSupply) / targetAmount;
+            const allocatedTokens = (userInvestment * distributableSupply) / targetAmount;
             return { allocatedTokens, refundAmount: 0n };
         }
     }
@@ -697,7 +707,9 @@ const formatPublicProjectData = (project: any, globalCounter: number): IdoProjec
 
 const calculatePublicTokenPrice = (targetAmount: bigint, tokenSupply: bigint): string => {
     if (tokenSupply === 0n) return "0";
-    return (Number(targetAmount) / Number(tokenSupply)).toFixed(6);
+    // Use 80% of token supply for price calculation (20% reserved for liquidity)
+    const distributableSupply = (tokenSupply * 80n) / 100n;
+    return (Number(targetAmount) / Number(distributableSupply)).toFixed(6);
 };
 
 const u64ToStringPublic = (u64Value: bigint): string => {
