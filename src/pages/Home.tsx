@@ -139,12 +139,42 @@ const Home = () => {
   // Use connected user projects or public projects
   const activeProjects = isConnected && projects.length > 0 ? projects : publicProjects;
 
+  // Calculate Average ROI based on LP model: 20% tokens + 50% funds
+  const calculateAverageROI = (projects: any[]) => {
+    const activeProjects = projects.filter(p => p.status === 'ACTIVE' || p.status === 'ENDED');
+    
+    if (activeProjects.length === 0) return "0%";
+    
+    const totalROI = activeProjects.reduce((sum, project) => {
+      const targetAmount = parseFloat(project.targetAmount || "0");
+      const tokenSupply = parseFloat(project.tokenSupply || "0");
+      
+      if (targetAmount === 0 || tokenSupply === 0) return sum;
+      
+      // IDO price per token (80% supply for 100% target)
+      const distributableSupply = tokenSupply * 0.8;
+      const idoPricePerToken = targetAmount / distributableSupply;
+      
+      // LP price per token (20% tokens + 50% funds)
+      const lpTokens = tokenSupply * 0.2;
+      const lpFunds = targetAmount * 0.5;
+      const lpPricePerToken = lpFunds / lpTokens;
+      
+      // ROI = (LP Price - IDO Price) / IDO Price * 100
+      const roi = ((lpPricePerToken - idoPricePerToken) / idoPricePerToken) * 100;
+      return sum + roi;
+    }, 0);
+    
+    const averageROI = totalROI / activeProjects.length;
+    return `${averageROI >= 0 ? '+' : ''}${averageROI.toFixed(1)}%`;
+  };
+
   // Calculate stats from real data
   const stats = {
     totalProjects: activeProjects.length.toString(),
     totalRaised: activeProjects.reduce((sum, p) => sum + parseFloat(p.totalRaised || "0"), 0).toLocaleString(),
     activeInvestors: activeProjects.reduce((sum, p) => sum + parseInt(p.totalInvestors || "0"), 0).toLocaleString(),
-    avgRoi: activeProjects.length > 0 ? "+145%" : "0%" // Placeholder calculation
+    avgRoi: calculateAverageROI(activeProjects)
   };
 
   // Get featured projects (first 3 projects)
@@ -232,8 +262,8 @@ const Home = () => {
               className="animate-fadeIn"
             />
             <StatCard
-              title="Total Raised"
-              value={`$${stats.totalRaised}`}
+              title="Total Raised Points"
+              value={`${stats.totalRaised}`}
               className="animate-fadeIn"
             />
             <StatCard

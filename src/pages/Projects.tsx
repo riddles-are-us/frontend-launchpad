@@ -164,9 +164,25 @@ const Projects = () => {
             <h1 className="text-4xl font-bold font-mono text-gradient-primary mb-4">
               IDO PROJECTS
             </h1>
-            <p className="text-lg font-mono text-muted-foreground">
+            <p className="text-lg font-mono text-muted-foreground mb-4">
               Discover and invest in cutting-edge ZKCross projects
             </p>
+            
+            {/* Token Reserve System Notice */}
+            <div className="bg-info/10 border border-info/20 p-4 rounded-lg">
+              <div className="flex items-start gap-3">
+                <div className="w-2 h-2 rounded-full bg-info mt-2 animate-pulse"></div>
+                <div className="flex-1">
+                  <h3 className="font-mono text-sm font-semibold text-info mb-2">
+                    💧 Token Distribution & Liquidity
+                  </h3>
+                  <p className="font-mono text-xs text-info/80">
+                    IDO projects reserve 20% of token supply for initial liquidity pool creation. 80% is available for public sale. 
+                    This ensures healthy market liquidity and trading opportunities post-launch.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Filters */}

@@ -474,20 +474,20 @@ const Dashboard = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <StatCard
               title="ZKWASM Points Balance"
-              value={`${dashboardStats.balance} points`}
+              value={`${parseFloat(dashboardStats.balance).toLocaleString()} points`}
               change={`~$${(parseFloat(dashboardStats.balance) / 100000).toFixed(2)} USDT equivalent`}
               changeType="neutral"
             />
             <StatCard
               title="Total Invested"
-              value={`$${dashboardStats.totalInvested}`}
-              change={`${dashboardStats.totalProjects} projects`}
+              value={`${parseFloat(dashboardStats.totalInvested).toLocaleString()} points`}
+              change={`~$${(parseFloat(dashboardStats.totalInvested) / 100000).toFixed(2)} USDT equivalent • ${dashboardStats.totalProjects} projects`}
               changeType="positive"
             />
             <StatCard
               title="Portfolio Value"
-              value={`$${dashboardStats.portfolioValue}`}
-              change={dashboardStats.unrealizedGains === "0" || dashboardStats.unrealizedGains === "0.00" || parseFloat(dashboardStats.unrealizedGains || "0") === 0 ? "No gains/losses" : dashboardStats.unrealizedGains}
+              value={`${parseFloat(dashboardStats.portfolioValue).toLocaleString()} points`}
+              change={`~$${(parseFloat(dashboardStats.portfolioValue) / 100000).toFixed(2)} USDT equivalent${dashboardStats.unrealizedGains === "0" || dashboardStats.unrealizedGains === "0.00" || parseFloat(dashboardStats.unrealizedGains || "0") === 0 ? " • No gains/losses" : ` • ${dashboardStats.unrealizedGains}`}`}
               changeType="positive"
             />
             <StatCard
@@ -549,7 +549,8 @@ const Dashboard = () => {
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <p className="font-mono text-xs text-muted-foreground uppercase">Invested</p>
-                          <p className="font-mono text-sm font-semibold">${project.invested}</p>
+                          <p className="font-mono text-sm font-semibold">{parseFloat(project.invested).toLocaleString()} points</p>
+                          <p className="font-mono text-xs text-muted-foreground">~${(parseFloat(project.invested) / 100000).toFixed(2)} USDT equivalent</p>
                         </div>
                         <div>
                           <p className="font-mono text-xs text-muted-foreground uppercase">Tokens</p>
@@ -557,7 +558,8 @@ const Dashboard = () => {
                         </div>
                         <div>
                           <p className="font-mono text-xs text-muted-foreground uppercase">Value</p>
-                          <p className="font-mono text-sm font-semibold">${project.currentValue}</p>
+                          <p className="font-mono text-sm font-semibold">{parseFloat(project.currentValue).toLocaleString()} points</p>
+                          <p className="font-mono text-xs text-muted-foreground">~${(parseFloat(project.currentValue) / 100000).toFixed(2)} USDT equivalent</p>
                         </div>
                         <div>
                           <p className="font-mono text-xs text-muted-foreground uppercase">P&L</p>
@@ -652,7 +654,18 @@ const Dashboard = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                           <div>
                             <span className="font-mono text-muted-foreground">Amount: </span>
-                            <span className="font-mono font-semibold">{tx.amount}</span>
+                            <div className="flex flex-col">
+                              <span className="font-mono font-semibold">
+                                {tx.amount.includes('points') || tx.amount.includes('USDT') || tx.amount.includes('$') 
+                                  ? tx.amount 
+                                  : `${parseFloat(tx.amount).toLocaleString()} points`}
+                              </span>
+                              {!tx.amount.includes('points') && !tx.amount.includes('USDT') && !tx.amount.includes('$') && (
+                                <span className="font-mono text-xs text-muted-foreground">
+                                  ~${(parseFloat(tx.amount) / 100000).toFixed(2)} USDT equivalent
+                                </span>
+                              )}
+                            </div>
                           </div>
                           <div>
                             <span className="font-mono text-muted-foreground">Time: </span>

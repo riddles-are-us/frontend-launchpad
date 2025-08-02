@@ -81,14 +81,16 @@ const ProjectCard = ({ project, globalCounter, className = '', style, onInvest }
 
   const calculateAndFormatTokenPrice = (targetAmount: string, tokenSupply: string) => {
     const target = parseFloat(targetAmount);
-    const supply = parseFloat(tokenSupply);
+    const totalSupply = parseFloat(tokenSupply);
     
     // Avoid division by zero
-    if (supply === 0 || isNaN(target) || isNaN(supply)) {
+    if (totalSupply === 0 || isNaN(target) || isNaN(totalSupply)) {
       return "N/A";
     }
     
-    const price = target / supply;
+    // Use 80% of token supply for price calculation (20% reserved)
+    const distributableSupply = totalSupply * 0.8;
+    const price = target / distributableSupply;
     
     // For very small numbers, use scientific notation
     if (price < 0.0001) {
@@ -101,6 +103,25 @@ const ProjectCard = ({ project, globalCounter, className = '', style, onInvest }
       return price.toFixed(3); // e.g., 1.234
     }
   };
+
+  // Calculate expected tokens based on 80% distributable supply
+  const calculateExpectedTokens = (investmentAmount: string, targetAmount: string, tokenSupply: string) => {
+    const investment = parseFloat(investmentAmount);
+    const target = parseFloat(targetAmount);
+    const totalSupply = parseFloat(tokenSupply);
+    
+    if (investment === 0 || target === 0 || totalSupply === 0 || isNaN(investment) || isNaN(target) || isNaN(totalSupply)) {
+      return "0";
+    }
+    
+    // Use 80% of token supply for allocation (20% reserved)
+    const distributableSupply = totalSupply * 0.8;
+    const expectedTokens = (investment * distributableSupply) / target;
+    
+    return expectedTokens.toLocaleString();
+  };
+
+
 
   const calculateAccurateProgress = (totalRaised: string, targetAmount: string) => {
     const raised = parseFloat(totalRaised);
@@ -197,8 +218,8 @@ const ProjectCard = ({ project, globalCounter, className = '', style, onInvest }
         {/* First row: Target & Raised */}
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1">
-            <p className="font-mono text-xs text-muted-foreground uppercase">Target</p>
-            <p className="font-mono text-sm font-semibold text-foreground">
+            <p className="font-mono text-xs text-foreground font-bold uppercase tracking-wider">Target</p>
+            <p className="font-mono text-sm text-primary">
               {formatAmount(project.targetAmount)} points
             </p>
             <p className="font-mono text-xs text-muted-foreground">
@@ -206,8 +227,8 @@ const ProjectCard = ({ project, globalCounter, className = '', style, onInvest }
             </p>
           </div>
           <div className="space-y-1">
-            <p className="font-mono text-xs text-muted-foreground uppercase">Raised</p>
-            <p className="font-mono text-sm font-semibold text-accent">
+            <p className="font-mono text-xs text-foreground font-bold uppercase tracking-wider">Raised</p>
+            <p className="font-mono text-sm text-accent">
               {formatAmount(project.totalRaised)} points
             </p>
             <p className="font-mono text-xs text-muted-foreground">
@@ -219,14 +240,20 @@ const ProjectCard = ({ project, globalCounter, className = '', style, onInvest }
         {/* Second row: Token Supply & Token Price */}
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1">
-            <p className="font-mono text-xs text-muted-foreground uppercase">Token Supply</p>
-            <p className="font-mono text-sm font-semibold text-primary">
+            <p className="font-mono text-xs text-foreground font-bold uppercase tracking-wider">Token Supply</p>
+            <p className="font-mono text-sm text-primary">
               {formatTokenSupply(project.tokenSupply)} {project.tokenSymbol}
+            </p>
+            <p className="font-mono text-xs text-muted-foreground">
+              {formatTokenSupply((parseFloat(project.tokenSupply) * 0.8).toString())} for sale (80%)
+            </p>
+            <p className="font-mono text-xs text-muted-foreground">
+              {formatTokenSupply((parseFloat(project.tokenSupply) * 0.2).toString())} for liquidity (20%)
             </p>
           </div>
           <div className="space-y-1">
-            <p className="font-mono text-xs text-muted-foreground uppercase">Token Price</p>
-            <p className="font-mono text-sm font-semibold text-secondary">
+            <p className="font-mono text-xs text-foreground font-bold uppercase tracking-wider">Token Price</p>
+            <p className="font-mono text-sm text-secondary">
               {calculateAndFormatTokenPrice(project.targetAmount, project.tokenSupply)} USDT
             </p>
             <p className="font-mono text-xs text-muted-foreground">
@@ -238,8 +265,8 @@ const ProjectCard = ({ project, globalCounter, className = '', style, onInvest }
         {/* Third row: Max Cap & Investors */}
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1">
-            <p className="font-mono text-xs text-muted-foreground uppercase">Max Individual Cap</p>
-            <p className="font-mono text-sm font-semibold text-warning">
+            <p className="font-mono text-xs text-foreground font-bold uppercase tracking-wider">Max Individual Cap</p>
+            <p className="font-mono text-sm text-warning">
               {formatAmount(project.maxIndividualCap)} points
             </p>
             <p className="font-mono text-xs text-muted-foreground">
@@ -247,8 +274,8 @@ const ProjectCard = ({ project, globalCounter, className = '', style, onInvest }
             </p>
           </div>
           <div className="space-y-1">
-            <p className="font-mono text-xs text-muted-foreground uppercase">Investors</p>
-            <p className="font-mono text-sm font-semibold text-secondary">
+            <p className="font-mono text-xs text-foreground font-bold uppercase tracking-wider">Investors</p>
+            <p className="font-mono text-sm text-secondary">
               {project.totalInvestors}
             </p>
           </div>
@@ -313,6 +340,16 @@ const ProjectCard = ({ project, globalCounter, className = '', style, onInvest }
                     onChange={(e) => setInvestAmount(e.target.value)}
                     className="input-pixel"
                   />
+                  {investAmount && parseFloat(investAmount) > 0 && (
+                    <div className="bg-muted/20 p-3 rounded border">
+                      <div className="space-y-1">
+                        <p className="font-mono text-xs text-muted-foreground">Expected Tokens:</p>
+                        <p className="font-mono text-sm font-semibold text-primary">
+                          {calculateExpectedTokens(investAmount, project.targetAmount, project.tokenSupply)} {project.tokenSymbol}
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div className="flex gap-2">
                   <Button 
