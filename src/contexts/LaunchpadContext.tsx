@@ -596,7 +596,7 @@ export const LaunchpadProvider: React.FC<LaunchpadProviderProps> = ({ children, 
     }, [api, isConnected, fallbackInitialized, refreshData]);
 
     // Withdraw tokens
-    const withdrawTokens = useCallback(async (projectId: string) => {
+    const withdrawTokens = useCallback(async (projectId: string, address: string) => {
         if (!api) {
             throw new Error('API not available');
         }
@@ -608,7 +608,7 @@ export const LaunchpadProvider: React.FC<LaunchpadProviderProps> = ({ children, 
             setTransactionState({ status: 'PENDING', type: 'WITHDRAW_TOKENS' });
             
             const projectIdBigInt = BigInt(projectId);
-            const result = await api.withdrawTokens(projectIdBigInt);
+            const result = await api.withdrawTokens(projectIdBigInt, address);
             
             setTransactionState({ status: 'SUCCESS', type: 'WITHDRAW_TOKENS' });
             

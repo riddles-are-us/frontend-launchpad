@@ -31,7 +31,7 @@ Located in `src/services/api.ts`, provides:
 - `getUserAllPositions(pid1, pid2)` - Get user's portfolio positions
 - `getUserStats(pid1, pid2)` - Get user statistics and balances
 - `investInProject(projectId, amount)` - Invest in a project
-- `withdrawTokens(projectId)` - Withdraw allocated tokens
+- `withdrawTokens(projectId, address)` - Withdraw allocated tokens to specified address
 - `withdrawPoints(amount, address)` - Withdraw ZKWASM Points to external address
 
 #### Context Provider

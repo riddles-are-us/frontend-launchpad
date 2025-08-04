@@ -1,4 +1,4 @@
-import { createCommand, PlayerConvention, ZKWasmAppRpc } from 'zkwasm-minirollup-rpc';
+import { createCommand, createWithdrawCommand, PlayerConvention, ZKWasmAppRpc } from 'zkwasm-minirollup-rpc';
 import type { L1AccountInfo } from 'zkwasm-minirollup-browser';
 
 // API Configuration
@@ -169,9 +169,11 @@ export class LaunchpadAPI extends PlayerConvention {
     }
 
     // Withdraw allocated tokens after project finalization
-    async withdrawTokens(projectId: bigint): Promise<any> {
+    async withdrawTokens(projectId: bigint, address: string): Promise<any> {
         let nonce = await this.getNonce();
-        let cmd = createCommand(nonce, BigInt(WITHDRAW_TOKENS), [projectId]);
+        // Use placeholder amount (1n) - actual amount will be calculated by smart contract
+        // Use projectId as tokenIndex since they map to the same concept
+        let cmd = createWithdrawCommand(nonce, BigInt(WITHDRAW_TOKENS), address, projectId, 1n);
         return await this.sendTransactionWithCommand(cmd);
     }
 

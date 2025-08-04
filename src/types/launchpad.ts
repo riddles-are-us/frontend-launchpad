@@ -128,7 +128,7 @@ export interface LaunchpadContextType {
     disconnect: () => void;
     refreshData: () => Promise<void>;
     investInProject: (projectId: string, amount: string) => Promise<any>;
-    withdrawTokens: (projectId: string) => Promise<any>;
+    withdrawTokens: (projectId: string, address: string) => Promise<any>;
     withdrawPoints: (amount: string) => Promise<any>;
 }
 

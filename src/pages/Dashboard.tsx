@@ -94,8 +94,18 @@ const Dashboard = () => {
 
   // Handle token withdrawal
   const handleWithdraw = async (projectId: string) => {
+    if (!l1Account) {
+      toast({
+        title: "Error",
+        description: "Wallet not connected",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
-      await withdraw(projectId);
+      const address = l1Account.address.replace('0x', ''); // Remove 0x prefix
+      await withdraw(projectId, address);
       toast({
         title: "Success",
         description: "Tokens withdrawn successfully!",
@@ -343,8 +353,8 @@ const Dashboard = () => {
 
     return {
       projectId: position.projectId,
-      tokenSymbol: position.tokenSymbol,
-      projectName: position.projectName || position.tokenSymbol,
+      tokenSymbol: projectData.tokenSymbol || position.tokenSymbol,
+      projectName: projectData.projectName || position.projectName || projectData.tokenSymbol || position.tokenSymbol,
       invested: position.investedAmount,
       tokensOwned,
       currentValue,
