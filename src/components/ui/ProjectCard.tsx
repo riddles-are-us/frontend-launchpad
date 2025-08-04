@@ -290,10 +290,15 @@ const ProjectCard = ({ project, globalCounter, className = '', style, onInvest }
             <p className="font-mono text-xs text-muted-foreground uppercase">Status</p>
             <div className="text-right">
               {project.isOverSubscribed ? (
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-warning animate-pulse"></div>
-                  <p className="font-mono text-xs font-semibold text-warning uppercase">
-                    Oversubscribed
+                <div>
+                  <div className="flex items-center justify-end gap-2 mb-1">
+                    <div className="w-2 h-2 rounded-full bg-warning animate-pulse"></div>
+                    <p className="font-mono text-xs font-semibold text-warning uppercase">
+                      Oversubscribed
+                    </p>
+                  </div>
+                  <p className="font-mono text-xs text-muted-foreground">
+                    {formatTimeRemaining(project.status, project.startTime, project.endTime)}
                   </p>
                 </div>
               ) : (

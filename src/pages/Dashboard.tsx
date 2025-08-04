@@ -589,11 +589,12 @@ const Dashboard = () => {
                           <p className="font-mono text-xs text-muted-foreground">~${(parseFloat(project.currentValue) / 100000).toFixed(2)} USDT equivalent</p>
                         </div>
                         <div>
-                          <p className="font-mono text-xs text-foreground font-bold uppercase tracking-wider">P&L</p>
-                          <p className={`font-mono text-sm ${
-                            project.gainLoss.startsWith('+') ? 'text-success' : 'text-destructive'
-                          }`}>
-                            {project.gainLoss} ({project.gainLossPercent})
+                          <p className="font-mono text-xs text-foreground font-bold uppercase tracking-wider">Refund</p>
+                          <p className="font-mono text-sm text-accent">
+                            {parseFloat(project.refundAmount).toLocaleString()} points
+                          </p>
+                          <p className="font-mono text-xs text-muted-foreground">
+                            ~${(parseFloat(project.refundAmount) / 100000).toFixed(2)} USDT equivalent
                           </p>
                         </div>
                       </div>
