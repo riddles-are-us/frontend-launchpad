@@ -178,9 +178,10 @@ export class LaunchpadAPI extends PlayerConvention {
     }
 
     // Withdraw ZKWASM Points to external address
-    async withdrawPoints(amount: bigint, addressHigh: bigint, addressLow: bigint): Promise<any> {
+    async withdrawPoints(amount: bigint, address: string): Promise<any> {
         let nonce = await this.getNonce();
-        let cmd = createCommand(nonce, BigInt(WITHDRAW_POINTS), [0n, amount, addressHigh, addressLow]);
+        // Use tokenIndex 0 for points (USDT equivalent)
+        let cmd = createWithdrawCommand(nonce, BigInt(WITHDRAW_POINTS), address, 0n, amount);
         return await this.sendTransactionWithCommand(cmd);
     }
 

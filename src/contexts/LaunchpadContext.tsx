@@ -642,11 +642,8 @@ export const LaunchpadProvider: React.FC<LaunchpadProviderProps> = ({ children, 
             
             // Use user's L1 address automatically
             const address = l1Account.address.replace('0x', ''); // Remove 0x prefix
-            const addressBigInt = BigInt('0x' + address);
-            const addressHigh = addressBigInt >> 128n;
-            const addressLow = addressBigInt & ((1n << 128n) - 1n);
             
-            const result = await api.withdrawPoints(amountBigInt, addressHigh, addressLow);
+            const result = await api.withdrawPoints(amountBigInt, address);
             
             setTransactionState({ status: 'SUCCESS', type: 'WITHDRAW_POINTS' });
             
