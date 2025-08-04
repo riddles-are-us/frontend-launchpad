@@ -178,7 +178,7 @@ const Projects = () => {
                   </h3>
                   <p className="font-mono text-xs text-info/80">
                     IDO projects reserve 20% of token supply for initial liquidity pool creation. 80% is available for public sale. 
-                    This ensures healthy market liquidity and trading opportunities post-launch.
+                    This ensures healthy market liquidity and trading opportunities post-launch. Token liquidity will be automatically added within 24 hours after IDO completion.
                   </p>
                 </div>
               </div>

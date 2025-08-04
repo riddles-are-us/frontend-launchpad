@@ -484,9 +484,15 @@ const Dashboard = () => {
             <h1 className="text-4xl font-bold font-mono text-gradient-primary mb-4">
               DASHBOARD
             </h1>
-            <p className="text-lg font-mono text-muted-foreground">
+            <p className="text-lg font-mono text-muted-foreground mb-3">
               Your IDO investment portfolio
             </p>
+            <div className="bg-muted/30 border border-muted p-3 rounded-lg">
+              <p className="font-mono text-sm text-muted-foreground flex items-center gap-2">
+                <span className="text-accent">ℹ️</span>
+                <span>Note: Withdrawn tokens and points will arrive in your wallet within 24 hours.</span>
+              </p>
+            </div>
           </div>
 
           {/* Stats Overview */}
