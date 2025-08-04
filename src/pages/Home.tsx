@@ -34,10 +34,10 @@ const Home = () => {
 
   // Load public projects when not connected
   useEffect(() => {
-    if (!isConnected) {
+    if (!isConnected && globalCounter > 0) {
       const loadPublicProjects = async () => {
         try {
-          const publicProjectsData = await getPublicProjects();
+          const publicProjectsData = await getPublicProjects(globalCounter);
           setPublicProjects(publicProjectsData);
         } catch (err) {
           console.error('Failed to load public projects for home:', err);
@@ -46,7 +46,7 @@ const Home = () => {
       
       loadPublicProjects();
     }
-  }, [isConnected]);
+  }, [isConnected, globalCounter]);
 
   // Load live activity data
   useEffect(() => {
