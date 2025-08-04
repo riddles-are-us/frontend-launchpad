@@ -331,12 +331,15 @@ const Dashboard = () => {
     );
 
     // Format token amounts
-    const tokensOwned = Number(allocation.allocatedTokens).toLocaleString();
+    const tokensOwned = position.tokensWithdrawn ? "0" : Number(allocation.allocatedTokens).toLocaleString();
     const refundAmount = Number(allocation.refundAmount).toString();
 
     // Calculate current value (for ended projects, use token price; for active, use invested amount)
     let currentValue = "0";
-    if (projectStatus === 'ENDED') {
+    if (position.tokensWithdrawn) {
+      // If tokens have been withdrawn, current value is 0
+      currentValue = "0";
+    } else if (projectStatus === 'ENDED') {
       // Use token price for ended projects
       const tokenPrice = parseFloat(projectData.tokenPrice);
       currentValue = (Number(allocation.allocatedTokens) * tokenPrice).toFixed(2);
@@ -348,8 +351,14 @@ const Dashboard = () => {
     // Calculate P&L
     const investedAmount = parseFloat(position.investedAmount);
     const currentValueNum = parseFloat(currentValue);
-    const gainLoss = currentValueNum - investedAmount;
-    const gainLossPercent = investedAmount > 0 ? (gainLoss / investedAmount) * 100 : 0;
+    let gainLoss = currentValueNum - investedAmount;
+    let gainLossPercent = investedAmount > 0 ? (gainLoss / investedAmount) * 100 : 0;
+    
+    // If tokens have been withdrawn, P&L is realized (0 for now, could be calculated based on withdrawal value)
+    if (position.tokensWithdrawn) {
+      gainLoss = 0; // Realized - no unrealized gain/loss
+      gainLossPercent = 0;
+    }
 
     return {
       projectId: position.projectId,
@@ -564,7 +573,12 @@ const Dashboard = () => {
                         </div>
                         <div>
                           <p className="font-mono text-xs text-foreground font-bold uppercase tracking-wider">Tokens</p>
-                          <p className="font-mono text-sm text-accent break-all">{project.tokensOwned}</p>
+                          <p className={`font-mono text-sm break-all ${project.tokensOwned === "0" ? 'text-muted-foreground' : 'text-accent'}`}>
+                            {project.tokensOwned}
+                            {project.tokensOwned === "0" && (
+                              <span className="text-xs ml-1">(withdrawn)</span>
+                            )}
+                          </p>
                         </div>
                         <div>
                           <p className="font-mono text-xs text-foreground font-bold uppercase tracking-wider">Value</p>

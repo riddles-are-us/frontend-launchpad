@@ -349,11 +349,14 @@ export class LaunchpadAPI extends PlayerConvention {
                 // Calculate actual token allocation based on 80% distributable supply
                 const userInvestment = BigInt(position.investedAmount);
                 
-                // We need project data to calculate proper allocation
-                // For now, use invested amount as portfolio value (placeholder)
-                // In production, this should fetch current token prices and calculate real value
-                portfolioValue += parseFloat(position.investedAmount);
-                totalTokens += 1; // Placeholder - would need actual token count from allocation calculation
+                // Only count portfolio value if tokens haven't been withdrawn
+                if (!position.tokensWithdrawn) {
+                    // We need project data to calculate proper allocation
+                    // For now, use invested amount as portfolio value (placeholder)
+                    // In production, this should fetch current token prices and calculate real value
+                    portfolioValue += parseFloat(position.investedAmount);
+                    totalTokens += 1; // Placeholder - would need actual token count from allocation calculation
+                }
             }
 
             const unrealizedGains = portfolioValue - totalInvested;
