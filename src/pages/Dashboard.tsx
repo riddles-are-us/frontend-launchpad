@@ -554,6 +554,9 @@ const Dashboard = () => {
                           <p className="font-mono text-sm text-muted-foreground">
                             {project.projectName}
                           </p>
+                          <p className="font-mono text-xs text-muted-foreground/80">
+                            ID: {project.projectId}
+                          </p>
                         </div>
                         <div className={`px-2 py-1 border font-mono text-xs font-semibold uppercase tracking-wider ${
                           project.status === 'ACTIVE' 
@@ -831,9 +834,14 @@ const Dashboard = () => {
                       .map((project) => (
                         <div key={project.projectId} className="border border-border p-4 bg-card/50">
                           <div className="flex items-center justify-between mb-2">
-                            <span className="font-mono font-semibold text-primary">
-                              {project.tokenSymbol}
-                            </span>
+                            <div>
+                              <span className="font-mono font-semibold text-primary">
+                                {project.tokenSymbol}
+                              </span>
+                              <p className="font-mono text-xs text-muted-foreground/80">
+                                ID: {project.projectId}
+                              </p>
+                            </div>
                             <span className="font-mono text-sm text-accent">
                               {project.tokensOwned} tokens
                             </span>

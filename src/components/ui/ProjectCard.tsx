@@ -190,6 +190,9 @@ const ProjectCard = ({ project, globalCounter, className = '', style, onInvest }
           <p className="font-mono text-sm text-muted-foreground">
             {project.projectName}
           </p>
+          <p className="font-mono text-xs text-muted-foreground/80">
+            ID: {project.projectId}
+          </p>
           {project.description && (
             <p className="font-mono text-xs text-muted-foreground mt-1 line-clamp-2">
               {project.description}
