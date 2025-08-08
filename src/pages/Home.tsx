@@ -365,7 +365,7 @@ const Home = () => {
             <div className="flex items-center space-x-4 mb-4 md:mb-0">
               <div className="flex items-center space-x-2">
                 <div className="w-3 h-3 bg-success rounded-full animate-pixel-pulse"></div>
-                <span className="font-mono text-sm text-success">TESTNET LIVE</span>
+                <span className="font-mono text-sm text-success">BETANET LIVE</span>
               </div>
               <div className="flex items-center space-x-2">
                 <div className="w-3 h-3 bg-primary rounded-full animate-pixel-pulse"></div>

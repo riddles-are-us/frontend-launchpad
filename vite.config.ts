@@ -73,7 +73,7 @@ export default defineConfig(({ mode }) => {
       // zkwasm-minirollup-browser expects REACT_APP_ prefix - 全部从 .env 读取
       REACT_APP_CHAIN_ID: JSON.stringify(env.REACT_APP_CHAIN_ID),
       REACT_APP_CHAIN_NAME: JSON.stringify(env.REACT_APP_CHAIN_NAME),
-      REACT_APP_RPC_URL: JSON.stringify(env.REACT_APP_RPC_URL),
+      REACT_APP_URL: env.REACT_APP_URL,
       REACT_APP_DEPOSIT_CONTRACT: JSON.stringify(env.REACT_APP_DEPOSIT_CONTRACT),
       REACT_APP_TOKEN_CONTRACT: JSON.stringify(env.REACT_APP_TOKEN_CONTRACT),
       REACT_APP_WALLETCONNECT_PROJECT_ID: JSON.stringify(env.REACT_APP_WALLETCONNECT_PROJECT_ID),
