@@ -55,6 +55,8 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("portfolio");
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [depositAmount, setDepositAmount] = useState("");
+
+
   const [currentPage, setCurrentPage] = useState(1);
   const [showPointsDialog, setShowPointsDialog] = useState(false);
   const [hasSeenPointsDialog, setHasSeenPointsDialog] = useState(false);
@@ -278,6 +280,34 @@ const Dashboard = () => {
   console.log('Dashboard: userStats:', userStats);
   console.log('Dashboard: dashboardStats:', dashboardStats);
   console.log('Dashboard: balance value:', dashboardStats.balance);
+
+  // Input validation functions
+  const handleWithdrawAmountChange = (value: string) => {
+    // Remove any non-numeric characters (only allow digits)
+    const cleanValue = value.replace(/[^0-9]/g, '');
+    
+    // Convert to number for validation
+    const numValue = parseInt(cleanValue);
+    const currentBalance = parseInt(dashboardStats.balance);
+    
+    // Don't allow negative numbers, zero, or amounts exceeding balance
+    if (cleanValue === '' || (numValue > 0 && numValue <= currentBalance)) {
+      setWithdrawAmount(cleanValue);
+    }
+  };
+
+  const handleDepositAmountChange = (value: string) => {
+    // Remove any non-numeric characters (only allow digits)
+    const cleanValue = value.replace(/[^0-9]/g, '');
+    
+    // Convert to number for validation
+    const numValue = parseInt(cleanValue);
+    
+    // Don't allow negative numbers or zero
+    if (cleanValue === '' || numValue > 0) {
+      setDepositAmount(cleanValue);
+    }
+  };
   
   const portfolioProjects: PortfolioProject[] = positions.map(position => {
     // Find the corresponding project data to get current info
@@ -810,18 +840,23 @@ const Dashboard = () => {
                       <input 
                         className="w-full input-pixel" 
                         placeholder="100000" 
-                        type="number"
+                        type="text"
                         value={depositAmount}
-                        onChange={(e) => setDepositAmount(e.target.value)}
+                        onChange={(e) => handleDepositAmountChange(e.target.value)}
+                        min="1"
+                        step="1"
                       />
                       <div className="text-xs font-mono text-muted-foreground">
                         ~${(parseFloat(depositAmount || "0") / 100000).toFixed(2)} USDT equivalent
+                        <div className="mt-1 text-info">
+                          💡 Minimum deposit: 1 point (~$0.00001 USDT)
+                        </div>
                       </div>
                     </div>
                     <Button 
                       className="w-full btn-pixel"
                       onClick={handlePointsDeposit}
-                      disabled={!depositAmount || loading}
+                      disabled={!depositAmount || parseInt(depositAmount || "0") <= 0 || loading}
                     >
                       {loading ? 'DEPOSITING...' : 'DEPOSIT ZKWASM POINTS'}
                     </Button>
@@ -910,18 +945,26 @@ const Dashboard = () => {
                       <input 
                         className="w-full input-pixel" 
                         placeholder="0" 
-                        type="number"
+                        type="text"
                         value={withdrawAmount}
-                        onChange={(e) => setWithdrawAmount(e.target.value)}
+                        onChange={(e) => handleWithdrawAmountChange(e.target.value)}
+                        min="1"
+                        step="1"
+                        max={dashboardStats.balance}
                       />
                       <div className="text-xs font-mono text-muted-foreground">
                         ~${(parseFloat(withdrawAmount || "0") / 100000).toFixed(2)} USDT equivalent
+                        {withdrawAmount && parseInt(withdrawAmount) > parseInt(dashboardStats.balance) && (
+                          <div className="text-destructive mt-1">
+                            ⚠️ Amount exceeds available balance ({dashboardStats.balance} points)
+                          </div>
+                        )}
                       </div>
                     </div>
                     <Button 
                       className="w-full btn-pixel-secondary"
                       onClick={handlePointsWithdraw}
-                      disabled={!withdrawAmount || loading}
+                      disabled={!withdrawAmount || parseInt(withdrawAmount || "0") <= 0 || parseInt(withdrawAmount || "0") > parseInt(dashboardStats.balance) || loading}
                     >
                       {loading ? 'WITHDRAWING...' : 'WITHDRAW ZKWASM POINTS'}
                     </Button>

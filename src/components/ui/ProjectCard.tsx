@@ -31,6 +31,20 @@ interface ProjectCardProps {
 
 const ProjectCard = ({ project, globalCounter, className = '', style, onInvest }: ProjectCardProps) => {
   const [investAmount, setInvestAmount] = useState("");
+
+  // Input validation function for investment amount
+  const handleInvestAmountChange = (value: string) => {
+    // Remove any non-numeric characters (only allow digits)
+    const cleanValue = value.replace(/[^0-9]/g, '');
+    
+    // Convert to number for validation
+    const numValue = parseInt(cleanValue);
+    
+    // Don't allow negative numbers or zero
+    if (cleanValue === '' || numValue > 0) {
+      setInvestAmount(cleanValue);
+    }
+  };
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   
   // Check if description needs truncation (rough estimation based on character count and typical line length)
@@ -446,16 +460,18 @@ const ProjectCard = ({ project, globalCounter, className = '', style, onInvest }
                   </Label>
                   <Input
                     id="amount"
-                    type="number"
+                    type="text"
                     placeholder="Enter amount..."
                     value={investAmount}
-                    onChange={(e) => setInvestAmount(e.target.value)}
+                    onChange={(e) => handleInvestAmountChange(e.target.value)}
                     className="input-pixel"
+                    min="1"
+                    step="1"
                   />
-                  {investAmount && parseFloat(investAmount) > 0 && (
+                  {investAmount && parseInt(investAmount) > 0 && (
                     <div className="space-y-2">
                       <div className="text-sm font-mono text-muted-foreground">
-                        ~${(parseFloat(investAmount) / 100000).toFixed(2)} USDT equivalent
+                        ~${(parseInt(investAmount) / 100000).toFixed(2)} USDT equivalent
                       </div>
                       <div className="bg-muted/20 p-3 rounded border">
                         <div className="space-y-1">
@@ -471,7 +487,7 @@ const ProjectCard = ({ project, globalCounter, className = '', style, onInvest }
                 <div className="flex gap-2">
                   <Button 
                     onClick={handleInvest}
-                    disabled={!investAmount || parseFloat(investAmount) <= 0}
+                    disabled={!investAmount || parseInt(investAmount || "0") <= 0}
                     className="btn-pixel flex-1"
                   >
                     CONFIRM INVESTMENT
