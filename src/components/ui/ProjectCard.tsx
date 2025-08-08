@@ -37,13 +37,8 @@ const ProjectCard = ({ project, globalCounter, className = '', style, onInvest }
     // Remove any non-numeric characters (only allow digits)
     const cleanValue = value.replace(/[^0-9]/g, '');
     
-    // Convert to number for validation
-    const numValue = parseInt(cleanValue);
-    
-    // Don't allow negative numbers or zero
-    if (cleanValue === '' || numValue > 0) {
-      setInvestAmount(cleanValue);
-    }
+    // Allow any positive integer input (validation happens at button level)
+    setInvestAmount(cleanValue);
   };
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   
@@ -468,6 +463,9 @@ const ProjectCard = ({ project, globalCounter, className = '', style, onInvest }
                     min="1"
                     step="1"
                   />
+                  <div className="text-xs font-mono text-muted-foreground">
+                    💡 Range: 100,000 - {parseInt(project.maxIndividualCap).toLocaleString()} points
+                  </div>
                   {investAmount && parseInt(investAmount) > 0 && (
                     <div className="space-y-2">
                       <div className="text-sm font-mono text-muted-foreground">
@@ -487,7 +485,7 @@ const ProjectCard = ({ project, globalCounter, className = '', style, onInvest }
                 <div className="flex gap-2">
                   <Button 
                     onClick={handleInvest}
-                    disabled={!investAmount || parseInt(investAmount || "0") <= 0}
+                    disabled={!investAmount || parseInt(investAmount || "0") < 100000 || parseInt(investAmount || "0") > parseInt(project.maxIndividualCap)}
                     className="btn-pixel flex-1"
                   >
                     CONFIRM INVESTMENT
