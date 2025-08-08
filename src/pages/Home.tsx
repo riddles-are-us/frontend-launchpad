@@ -182,7 +182,7 @@ const Home = () => {
     projectId: project.projectId,
     projectName: project.projectName || `${project.tokenSymbol} Project`,
     tokenSymbol: project.tokenSymbol,
-    description: project.description || "Example project description",
+                description: project.description || "No project description",
     targetAmount: project.targetAmount,
     totalRaised: project.totalRaised,
     totalInvestors: project.totalInvestors,

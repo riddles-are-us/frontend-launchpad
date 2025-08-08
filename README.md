@@ -99,6 +99,48 @@ export const API_CONFIG = {
 };
 ```
 
+## Project Descriptions Management
+
+### Adding Project Descriptions
+
+Project descriptions are managed through a JSON file and can be customized for each IDO project:
+
+#### Using the Management Script
+
+```bash
+# List all existing project descriptions
+node src/scripts/add-project-description.js list
+
+# Add a new project description
+node src/scripts/add-project-description.js 4 "New DeFi protocol for cross-chain swaps"
+
+# Add a project description
+node src/scripts/add-project-description.js 5 "Gaming NFT platform with P2E mechanics"
+```
+
+#### Manual JSON Editing
+
+Edit `src/data/project-descriptions.json`:
+
+```json
+{
+  "descriptions": {
+    "1": {
+      "description": "Short description for the project card",
+      "website": "https://project.example.com",
+      "twitter": "https://twitter.com/project",
+      "telegram": "https://t.me/project"
+    }
+  }
+}
+```
+
+#### Description Fallback Logic
+
+- If a project has a description in the JSON file, it will be used
+- If no description is found, "No project description" will be displayed
+- The system automatically matches descriptions by project ID
+
 ## Getting Started
 
 ### Prerequisites

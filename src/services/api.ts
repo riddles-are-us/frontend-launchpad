@@ -1,5 +1,6 @@
 import { createCommand, createWithdrawCommand, PlayerConvention, ZKWasmAppRpc } from 'zkwasm-minirollup-rpc';
 import type { L1AccountInfo } from 'zkwasm-minirollup-browser';
+import { getProjectDescriptionText } from '../utils/project-descriptions';
 
 
 // Command constants for IDO launchpad (matching backend)
@@ -486,7 +487,7 @@ export class LaunchpadAPI extends PlayerConvention {
             projectId: project.projectId,
             tokenSymbol: tokenSymbol,
             projectName: `${tokenSymbol} Project`, // Add project name based on token symbol
-            description: project.description || "Example project description", // Add description with fallback
+            description: project.description || getProjectDescriptionText(project.projectId), // Add description with fallback
             targetAmount: project.targetAmount,
             tokenSupply: project.tokenSupply,
             maxIndividualCap: project.maxIndividualCap,
@@ -524,7 +525,27 @@ export class LaunchpadAPI extends PlayerConvention {
         if (tokenSupply === 0n) return "0";
         // Use 80% of token supply for price calculation (20% reserved for liquidity)
         const distributableSupply = (tokenSupply * 80n) / 100n;
-        return (Number(targetAmount) / Number(distributableSupply)).toFixed(6);
+        // Convert points to USDT: 100,000 points = 1 USDT
+        const targetAmountInUSDT = Number(targetAmount) / 100000;
+        const pricePerToken = targetAmountInUSDT / Number(distributableSupply);
+        return this.formatTokenPrice(pricePerToken);
+    }
+
+    private formatTokenPrice(price: number): string {
+        // For very small numbers (more than 10 zeros), use scientific notation
+        if (price < 0.0000000001) { // 10 zeros after decimal point
+            return price.toExponential(2); // e.g., 1.23e-11
+        } else if (price < 0.000001) {
+            return price.toFixed(10); // e.g., 0.0000012345
+        } else if (price < 0.001) {
+            return price.toFixed(8); // e.g., 0.00012345
+        } else if (price < 0.01) {
+            return price.toFixed(6); // e.g., 0.001234
+        } else if (price < 1) {
+            return price.toFixed(4); // e.g., 0.1234
+        } else {
+            return price.toFixed(3); // e.g., 1.234
+        }
     }
 
     private stringToU64Array(str: string): bigint[] {
@@ -708,7 +729,7 @@ const formatPublicProjectData = (project: any, globalCounter?: number): IdoProje
         projectId: project.projectId,
         tokenSymbol: tokenSymbol,
         projectName: `${tokenSymbol} Project`, // Add project name based on token symbol
-        description: project.description || "Example project description", // Add description with fallback
+        description: project.description || getProjectDescriptionText(project.projectId), // Add description with fallback
         targetAmount: project.targetAmount,
         tokenSupply: project.tokenSupply,
         maxIndividualCap: project.maxIndividualCap,
@@ -728,7 +749,27 @@ const calculatePublicTokenPrice = (targetAmount: bigint, tokenSupply: bigint): s
     if (tokenSupply === 0n) return "0";
     // Use 80% of token supply for price calculation (20% reserved for liquidity)
     const distributableSupply = (tokenSupply * 80n) / 100n;
-    return (Number(targetAmount) / Number(distributableSupply)).toFixed(6);
+    // Convert points to USDT: 100,000 points = 1 USDT
+    const targetAmountInUSDT = Number(targetAmount) / 100000;
+    const pricePerToken = targetAmountInUSDT / Number(distributableSupply);
+    return formatPublicTokenPrice(pricePerToken);
+};
+
+const formatPublicTokenPrice = (price: number): string => {
+    // For very small numbers (more than 10 zeros), use scientific notation
+    if (price < 0.0000000001) { // 10 zeros after decimal point
+        return price.toExponential(2); // e.g., 1.23e-11
+    } else if (price < 0.000001) {
+        return price.toFixed(10); // e.g., 0.0000012345
+    } else if (price < 0.001) {
+        return price.toFixed(8); // e.g., 0.00012345
+    } else if (price < 0.01) {
+        return price.toFixed(6); // e.g., 0.001234
+    } else if (price < 1) {
+        return price.toFixed(4); // e.g., 0.1234
+    } else {
+        return price.toFixed(3); // e.g., 1.234
+    }
 };
 
 const u64ToStringPublic = (u64Value: bigint): string => {
