@@ -59,7 +59,7 @@ export const LaunchpadProvider: React.FC<LaunchpadProviderProps> = ({ children, 
         
         // Check for specific error patterns
         if (errorMessage.includes('InvalidInvestmentAmount')) {
-            return 'Invalid investment amount. Please check the amount and try again.';
+            return 'Invalid investment amount. Please ensure: 1) Minimum 100,000 points (~$1 USDT), 2) Within project maximum cap, 3) Sufficient balance.';
         }
         if (errorMessage.includes('InvestmentExceedsCap')) {
             return 'Investment exceeds the maximum individual cap for this project.';
