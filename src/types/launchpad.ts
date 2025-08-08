@@ -117,6 +117,7 @@ export interface LaunchpadContextType {
     userStats: any | null; // Allow null for when user has no stats
     transactionHistory: any[];
     globalCounter: number; // Current global counter from RPC query
+    tradableTokens: Map<string, string>; // projectId -> token address mapping
     
     // UI state
     loading: boolean;

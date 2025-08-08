@@ -52,6 +52,7 @@ export const LaunchpadProvider: React.FC<LaunchpadProviderProps> = ({ children, 
     const [userBalance, setUserBalance] = useState<string>("0"); // Add user balance state
     const [fallbackInitialized, setFallbackInitialized] = useState(false); // Track fallback initialization
     const [globalCounter, setGlobalCounter] = useState<number>(0); // Current global counter from RPC
+    const [tradableTokens, setTradableTokens] = useState<Map<string, string>>(new Map()); // projectId -> token address
 
     // Error code mapping function
     const getErrorMessage = (error: any): string => {
@@ -545,6 +546,38 @@ export const LaunchpadProvider: React.FC<LaunchpadProviderProps> = ({ children, 
                 setTransactionHistory([]);
             }
 
+            // Query tradable tokens for ENDED projects
+            try {
+                console.log('LaunchpadContext: Querying tradable tokens...');
+                const tokens = await api.getAllTokens();
+                console.log('LaunchpadContext: Received tokens:', tokens);
+                
+                const newTradableTokens = new Map<string, string>();
+                
+                // For each ENDED project, check if its token is available for trading
+                // Match project ID with token array index
+                for (const project of projectsWithUpdatedStatus) {
+                    if (project.status === 'ENDED') {
+                        const projectIndex = parseInt(project.projectId);
+                        console.log(`LaunchpadContext: Checking ENDED project ${project.projectId} (index: ${projectIndex})`);
+                        
+                        // Find token by array index matching project ID
+                        if (projectIndex >= 0 && projectIndex < tokens.length) {
+                            const token = tokens[projectIndex];
+                            const tokenAddress = api.tokenUidToL1Address(token.token_uid);
+                            newTradableTokens.set(project.projectId, tokenAddress);
+                            console.log(`LaunchpadContext: Project ${project.projectId} token available for trading at ${tokenAddress}`);
+                        } else {
+                            console.log(`LaunchpadContext: No token found for project ${project.projectId} at index ${projectIndex}`);
+                        }
+                    }
+                }
+                
+                setTradableTokens(newTradableTokens);
+            } catch (tokenError) {
+                console.warn('LaunchpadContext: Failed to query tradable tokens:', tokenError);
+            }
+
             console.log('LaunchpadContext: Data refresh completed successfully');
         } catch (err) {
             console.error('LaunchpadContext: Failed to refresh data:', err);
@@ -672,6 +705,7 @@ export const LaunchpadProvider: React.FC<LaunchpadProviderProps> = ({ children, 
         userStats,
         transactionHistory,
         globalCounter,
+        tradableTokens,
         loading,
         error,
         transactionState,

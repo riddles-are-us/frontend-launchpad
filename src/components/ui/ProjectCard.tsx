@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getProjectDescription } from "../../utils/project-descriptions";
+import { useLaunchpad } from "../../contexts/LaunchpadContext";
 
 interface ProjectCardProps {
   project: {
@@ -31,6 +32,7 @@ interface ProjectCardProps {
 
 const ProjectCard = ({ project, globalCounter, className = '', style, onInvest }: ProjectCardProps) => {
   const [investAmount, setInvestAmount] = useState("");
+  const { tradableTokens } = useLaunchpad();
 
   // Input validation function for investment amount
   const handleInvestAmountChange = (value: string) => {
@@ -313,7 +315,7 @@ const ProjectCard = ({ project, globalCounter, className = '', style, onInvest }
           )}
         </div>
         <div className={`px-2 py-1 rounded border font-mono text-xs font-bold uppercase tracking-wider ${getStatusColor(project.status)}`}>
-          {project.status}
+          {project.status === 'ENDED' ? 'IDO ENDED' : project.status}
         </div>
       </div>
 
@@ -513,12 +515,27 @@ const ProjectCard = ({ project, globalCounter, className = '', style, onInvest }
         )}
         
         {project.status === 'ENDED' && (
-          <Button 
-            className="w-full btn-pixel"
-            disabled
-          >
-            ENDED
-          </Button>
+          <>
+            {tradableTokens.has(project.projectId) ? (
+              <Button 
+                className="w-full btn-pixel"
+                onClick={() => {
+                  const tokenAddress = tradableTokens.get(project.projectId);
+                  const uniswapUrl = `https://app.uniswap.org/swap?outputCurrency=${tokenAddress}&inputCurrency=0x55d398326f99059ff775485246999027b3197955&chain=bnb`;
+                  window.open(uniswapUrl, '_blank');
+                }}
+              >
+                TRADE
+              </Button>
+            ) : (
+              <Button 
+                className="w-full btn-pixel"
+                disabled
+              >
+                ENDED
+              </Button>
+            )}
+          </>
         )}
       </div>
 

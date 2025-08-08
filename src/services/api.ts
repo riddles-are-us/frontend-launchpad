@@ -80,6 +80,10 @@ export interface WithdrawalData {
     txHash?: string;
 }
 
+export interface TokenInfo {
+    token_uid: number | string; // Allow both number and string for large values
+}
+
 export interface UserProjectPosition {
     pid: string[];
     projectId: string;
@@ -255,6 +259,217 @@ export class LaunchpadAPI extends PlayerConvention {
         } catch (error) {
             console.error('Error fetching project:', error);
             throw error;
+        }
+    }
+
+    // Query all tokens from deposit contract using blockchain RPC
+    async getAllTokens(): Promise<TokenInfo[]> {
+        try {
+            console.log('LaunchpadAPI: Querying all tokens via blockchain RPC...');
+            
+            // Get environment variables for blockchain RPC and contract address
+            const rpcUrl = process.env.REACT_APP_RPC_URL;
+            const rawContractAddress = process.env.REACT_APP_DEPOSIT_CONTRACT;
+            
+            if (!rpcUrl || !rawContractAddress) {
+                console.error('LaunchpadAPI: Missing RPC URL or deposit contract address');
+                return [];
+            }
+            
+            // Clean and validate contract address
+            let cleanAddress = rawContractAddress.trim();
+            
+            // Remove surrounding quotes if present
+            if ((cleanAddress.startsWith('"') && cleanAddress.endsWith('"')) ||
+                (cleanAddress.startsWith("'") && cleanAddress.endsWith("'"))) {
+                cleanAddress = cleanAddress.slice(1, -1);
+            }
+            
+            // Remove 0x prefix if present for validation
+            if (cleanAddress.startsWith('0x')) {
+                cleanAddress = cleanAddress.slice(2);
+            }
+            
+            // Validate address length (should be 40 hex characters)
+            if (cleanAddress.length !== 40) {
+                console.error(`LaunchpadAPI: Invalid contract address length: ${cleanAddress.length}, expected 40. Address: ${rawContractAddress}`);
+                return [];
+            }
+            
+            // Validate hex characters
+            if (!/^[0-9a-fA-F]{40}$/.test(cleanAddress)) {
+                console.error(`LaunchpadAPI: Invalid contract address format: ${rawContractAddress}`);
+                return [];
+            }
+            
+            // Add 0x prefix
+            const depositContractAddress = `0x${cleanAddress}`;
+            console.log('LaunchpadAPI: Using contract address:', depositContractAddress);
+            
+            // Prepare the RPC call to query allTokens() method
+            // Function signature: allTokens() -> TokenInfo[]
+            // For "allTokens()" the correct function selector should be calculated
+            // Let me try a few possible selectors:
+            
+            // Correct function selector for allTokens()
+            // keccak256("allTokens()") = 6ff97f1d9d3a9541d333d7f77e612f681ebccec0dacddcfd4fea206794d35602
+            // Function selector = first 4 bytes = 0x6ff97f1d
+            const functionSelector = '0x6ff97f1d';
+            
+            console.log('LaunchpadAPI: Using function selector:', functionSelector);
+            console.log('LaunchpadAPI: Contract address:', depositContractAddress);
+            
+            const rpcPayload = {
+                jsonrpc: '2.0',
+                id: 1,
+                method: 'eth_call',
+                params: [{
+                    to: depositContractAddress,
+                    data: functionSelector
+                }, 'latest']
+            };
+            
+            console.log('LaunchpadAPI: Sending RPC request:', rpcPayload);
+            
+            const response = await fetch(rpcUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(rpcPayload)
+            });
+            
+            if (!response.ok) {
+                throw new Error(`RPC request failed: ${response.status}`);
+            }
+            
+            const rpcResult = await response.json();
+            console.log('LaunchpadAPI: RPC response:', rpcResult);
+            
+            if (rpcResult.error) {
+                console.error(`LaunchpadAPI: RPC error: ${rpcResult.error.message}`);
+                // If the function doesn't exist or reverted, return empty array
+                if (rpcResult.error.message.includes('execution reverted')) {
+                    console.log('LaunchpadAPI: Contract function reverted, possibly no tokens available or function not implemented');
+                    return [];
+                }
+                throw new Error(`RPC error: ${rpcResult.error.message}`);
+            }
+            
+            if (!rpcResult.result || rpcResult.result === '0x') {
+                console.log('LaunchpadAPI: No tokens found in contract or empty response');
+                return [];
+            }
+            
+            // Decode the returned data
+            // The result is hex-encoded ABI data for TokenInfo[] array
+            const hexData = rpcResult.result;
+            const tokens = this.decodeTokensArray(hexData);
+            
+            console.log('LaunchpadAPI: Decoded tokens:', tokens);
+            return tokens;
+            
+        } catch (error) {
+            console.error('LaunchpadAPI: Error querying tokens via blockchain RPC:', error);
+            return [];
+        }
+    }
+
+    // Helper method to decode TokenInfo[] array from hex data
+    private decodeTokensArray(hexData: string): TokenInfo[] {
+        try {
+            // Remove '0x' prefix
+            const data = hexData.startsWith('0x') ? hexData.slice(2) : hexData;
+            
+            if (data.length === 0) {
+                return [];
+            }
+            
+            // Parse ABI-encoded array
+            // First 32 bytes (64 hex chars) contain offset to array data (should be 0x20 = 32)
+            // Next 32 bytes contain array length
+            // Then each element is 32 bytes (uint256)
+            
+            if (data.length < 128) { // At least offset + length
+                return [];
+            }
+            
+            const offsetHex = data.slice(0, 64); // First 32 bytes
+            const arrayLengthHex = data.slice(64, 128); // Second 32 bytes
+            const arrayLength = parseInt(arrayLengthHex, 16);
+            
+            console.log('LaunchpadAPI: Decoding array with offset:', offsetHex, 'length:', arrayLength);
+            
+            if (arrayLength === 0) {
+                return [];
+            }
+            
+            const tokens: TokenInfo[] = [];
+            
+            // Each token_uid is 32 bytes (64 hex chars)
+            for (let i = 0; i < arrayLength; i++) {
+                const startIndex = 128 + (i * 64); // Skip offset + length, then each 32-byte element
+                const endIndex = startIndex + 64;
+                
+                if (endIndex <= data.length) {
+                    const tokenUidHex = data.slice(startIndex, endIndex);
+                    console.log(`LaunchpadAPI: Token ${i} hex:`, tokenUidHex);
+                    
+                    // Use BigInt for large numbers and keep as string to maintain precision
+                    const tokenUidBigInt = BigInt('0x' + tokenUidHex);
+                    console.log(`LaunchpadAPI: Token ${i} BigInt:`, tokenUidBigInt.toString());
+                    console.log(`LaunchpadAPI: Token ${i} hex analysis:`, tokenUidHex);
+                    
+                    // Let's also check if the hex contains an address directly
+                    // The last 40 characters of the hex might be the address
+                    const possibleAddressHex = tokenUidHex.slice(-40);
+                    console.log(`LaunchpadAPI: Token ${i} possible address from hex:`, '0x' + possibleAddressHex);
+                    
+                    // Keep as string to maintain precision for large numbers
+                    const tokenUid = tokenUidBigInt.toString();
+                    
+                    console.log(`LaunchpadAPI: Token ${i} final value:`, tokenUid);
+                    
+                    if (tokenUidBigInt > 0n) {
+                        tokens.push({ token_uid: tokenUid });
+                    }
+                }
+            }
+            
+            return tokens;
+            
+        } catch (error) {
+            console.error('LaunchpadAPI: Error decoding tokens array:', error);
+            return [];
+        }
+    }
+
+    // Convert token UID to L1 address
+    tokenUidToL1Address(tokenUid: number | string, chainId: number = 56): string {
+        try {
+            // Convert tokenUid to BigInt and then to hex
+            const tokenUidBigInt = typeof tokenUid === 'string' ? BigInt(tokenUid) : BigInt(tokenUid);
+            const tokenUidHex = tokenUidBigInt.toString(16).padStart(64, '0');
+            
+            console.log(`LaunchpadAPI: Converting tokenUid ${tokenUid} to hex:`, tokenUidHex);
+            
+            // Extract the last 40 characters (20 bytes) which represent the address
+            const addressHex = tokenUidHex.slice(-40);
+            const address = `0x${addressHex}`;
+            
+            console.log(`LaunchpadAPI: Extracted address: ${address}`);
+            
+            // Verify the extracted address looks valid
+            if (!/^0x[0-9a-fA-F]{40}$/.test(address)) {
+                console.error('LaunchpadAPI: Invalid address format extracted:', address);
+                return '0x0000000000000000000000000000000000000000';
+            }
+            
+            return address;
+            
+        } catch (error) {
+            console.error('LaunchpadAPI: Error converting tokenUid to address:', error);
+            return '0x0000000000000000000000000000000000000000';
         }
     }
 
