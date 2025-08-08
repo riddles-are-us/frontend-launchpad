@@ -2,13 +2,10 @@
 
 export const API_CONFIG = {
   // zkWasm Server Configuration
-  serverUrl: process.env.REACT_APP_ZKWASM_SERVER_URL || "http://localhost:3000",
+  serverUrl: process.env.REACT_APP_URL || "http://localhost:3000",
   
   // User private key (in production this should come from wallet connection)
   privateKey: process.env.REACT_APP_USER_PRIVATE_KEY || "0x1234567890abcdef",
-  
-  // API Base URL
-  baseUrl: process.env.REACT_APP_API_BASE_URL || "http://localhost:3000",
   
   // Network configuration
   network: process.env.REACT_APP_NETWORK || "testnet",

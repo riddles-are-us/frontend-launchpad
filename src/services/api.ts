@@ -1,8 +1,6 @@
 import { createCommand, createWithdrawCommand, PlayerConvention, ZKWasmAppRpc } from 'zkwasm-minirollup-rpc';
 import type { L1AccountInfo } from 'zkwasm-minirollup-browser';
 
-// API Configuration
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://localhost:3000";
 
 // Command constants for IDO launchpad (matching backend)
 const TICK = 0;
@@ -633,7 +631,7 @@ export default LaunchpadAPI;
 // Static method to get projects without authentication
 export const getPublicProjects = async (globalCounter?: number): Promise<IdoProjectData[]> => {
     try {
-        const serverUrl = process.env.REACT_APP_ZKWASM_SERVER_URL || "http://localhost:3000";
+        const serverUrl = process.env.REACT_APP_URL || "http://localhost:3000";
         const url = `${serverUrl}/data/idos`;
         console.log('Public API: Fetching projects from URL:', url);
         
