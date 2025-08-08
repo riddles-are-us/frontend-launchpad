@@ -165,7 +165,7 @@ const Projects = () => {
               IDO PROJECTS
             </h1>
             <p className="text-lg font-mono text-muted-foreground mb-4">
-              Discover and invest in cutting-edge ZKCross projects
+              Discover and invest in cutting-edge ZKWASM projects
             </p>
             
             {/* Token Reserve System Notice */}
