@@ -341,7 +341,24 @@ const Home = () => {
               The Next-Generation IDO Platform
             </p>
             <p className="text-lg text-foreground/80 max-w-2xl mx-auto leading-relaxed">
-              Invest in cutting-edge zkCross projects with USDT. 
+              Invest in cutting-edge zkCross projects with{" "}🪙
+              <span className="relative inline-flex items-center gap-1 group">
+                <span className="text-cyber-pink underline decoration-cyber-pink/50 decoration-2 underline-offset-4 cursor-pointer transition-all duration-200 hover:decoration-cyber-pink group-hover:text-cyber-pink/90">
+                  ZKWASM Points
+                </span>
+                {/* Tooltip */}
+                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-4 py-3 bg-card/95 backdrop-blur-md border border-border/50 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 w-80">
+                  <div className="text-sm text-foreground font-medium leading-relaxed">
+                    <p className="mb-2">Stake your tokens to earn ZKWASM Points, then withdraw to your wallet and deposit to Launchpad.</p>
+                    <p className="text-cyber-pink font-semibold cursor-pointer hover:text-cyber-pink/80 transition-colors" 
+                       onClick={() => window.open('https://staking.zkwasm.ai/', '_blank')}>
+                      Click to Stake →
+                    </p>
+                  </div>
+                  {/* Tooltip Arrow */}
+                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-border/50"></div>
+                </div>
+              </span>. 
               Dynamic allocation, instant withdrawals, zero fees.
             </p>
             
