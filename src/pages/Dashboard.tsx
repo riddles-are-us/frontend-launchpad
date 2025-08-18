@@ -813,11 +813,11 @@ const Dashboard = () => {
                       </label>
                       <div className="bg-muted p-3 rounded border">
                         <p className="font-mono text-sm text-foreground break-all">
-                          {process.env.REACT_APP_DEPOSIT_CONTRACT?.replace(/"/g, '') || "Contract address not configured"}
+                          {import.meta.env.REACT_APP_DEPOSIT_CONTRACT?.replace(/"/g, '') || "Contract address not configured"}
                         </p>
-                        {process.env.REACT_APP_DEPOSIT_CONTRACT && (
+                        {import.meta.env.REACT_APP_DEPOSIT_CONTRACT && (
                           <a 
-                            href={`https://bscscan.com/address/${process.env.REACT_APP_DEPOSIT_CONTRACT?.replace(/"/g, '')}`}
+                            href={`https://bscscan.com/address/${import.meta.env.REACT_APP_DEPOSIT_CONTRACT?.replace(/"/g, '')}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-1 font-mono text-xs text-primary hover:text-primary/80 transition-colors mt-1"

@@ -48,7 +48,7 @@
     "date-fns": "^3.6.0",
     "delphinus-curves": "github:DelphinusLab/delphinus-curves",
     "embla-carousel-react": "^8.3.0",
-    "ethers": "^5.7.2",
+    "ethers": "^6.15.0",
     "https-browserify": "^1.0.0",
     "input-otp": "^1.2.4",
     "lucide-react": "^0.462.0",

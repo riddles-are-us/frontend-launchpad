@@ -7,66 +7,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ZKCross Launchpad</title>
     <meta name="description" content="ZKCross Launchpad - Decentralized IDO Launchpad powered by ZKWASM" />
-
-    <!-- Polyfills for Node.js globals in browser -->
-    <script>
-      if (typeof global === 'undefined') {
-        var global = globalThis;
-      }
-      if (typeof process === 'undefined') {
-        var process = {
-          env: {},
-          version: '',
-          browser: true
-        };
-      }
-             if (typeof Buffer === 'undefined') {
-         // Complete Buffer constructor polyfill
-         function Buffer(data, encoding) {
-           if (!(this instanceof Buffer)) {
-             return new Buffer(data, encoding);
-           }
-           if (typeof data === 'number') {
-             return new Uint8Array(data);
-           }
-           if (typeof data === 'string') {
-             return new TextEncoder().encode(data);
-           }
-           return new Uint8Array(data || 0);
-         }
-         
-         Buffer.from = function(data, encoding) {
-           if (typeof data === 'string') {
-             return new TextEncoder().encode(data);
-           }
-           return new Uint8Array(data);
-         };
-         
-         Buffer.alloc = function(size, fill) {
-           return new Uint8Array(size);
-         };
-         
-         Buffer.isBuffer = function(obj) {
-           return obj instanceof Uint8Array;
-         };
-         
-         Buffer.concat = function(buffers) {
-           const total = buffers.reduce((sum, buf) => sum + buf.length, 0);
-           const result = new Uint8Array(total);
-           let offset = 0;
-           for (const buf of buffers) {
-             result.set(buf, offset);
-             offset += buf.length;
-           }
-           return result;
-         };
-         
-         window.Buffer = Buffer;
-         global.Buffer = Buffer;
-       }
-    </script>
-  </head>
-
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import StatCard from "@/components/ui/StatCard";
 import ProjectCard from "@/components/ui/ProjectCard";
 import { useProjects, useLaunchpad } from "@/contexts/LaunchpadContext";
+import { useWallet } from "@/contexts/WalletContext";
 import { getPublicProjects, type IdoProjectData } from "@/services/api";
 
 interface ActivityItem {
@@ -24,6 +25,8 @@ const Home = () => {
   // Use real data from LaunchpadContext
   const { projects } = useProjects();
   const { isConnected, loading, globalCounter, api } = useLaunchpad();
+  const walletContext = useWallet();
+  const { isConnected: walletConnected, isL2Connected, l1Account, l2Account } = walletContext;
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -354,7 +357,8 @@ const Home = () => {
                 className="btn-cyber-secondary min-w-[200px]"
                 onClick={() => navigate('/dashboard')}
               >
-                Connect Wallet
+                {walletConnected && isL2Connected ? 'View Dashboard' : 
+                 walletConnected ? 'Connect Launchpad' : 'Connect Wallet'}
               </Button>
             </div>
           </div>

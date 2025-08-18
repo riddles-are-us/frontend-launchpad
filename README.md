@@ -93,8 +93,8 @@ Configuration is managed in `src/config/api.ts`:
 
 ```typescript
 export const API_CONFIG = {
-  serverUrl: process.env.REACT_APP_ZKWASM_SERVER_URL || "http://localhost:3000",
-  privateKey: process.env.REACT_APP_USER_PRIVATE_KEY || "0x1234567890abcdef",
+  serverUrl: import.meta.env.REACT_APP_ZKWASM_SERVER_URL || "http://localhost:3000",
+  privateKey: import.meta.env.REACT_APP_USER_PRIVATE_KEY || "0x1234567890abcdef",
   // ... other config options
 };
 ```

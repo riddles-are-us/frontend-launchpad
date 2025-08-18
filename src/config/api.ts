@@ -2,16 +2,16 @@
 
 export const API_CONFIG = {
   // zkWasm Server Configuration
-  serverUrl: process.env.REACT_APP_URL || "http://localhost:3000",
+  serverUrl: import.meta.env.REACT_APP_URL || "http://localhost:3000",
   
   // User private key (in production this should come from wallet connection)
-  privateKey: process.env.REACT_APP_USER_PRIVATE_KEY || "0x1234567890abcdef",
+  privateKey: import.meta.env.REACT_APP_USER_PRIVATE_KEY || "0x1234567890abcdef",
   
   // Network configuration
-  network: process.env.REACT_APP_NETWORK || "testnet",
+  network: import.meta.env.REACT_APP_NETWORK || "testnet",
   
   // Debug mode
-  debug: process.env.REACT_APP_DEBUG === "true",
+  debug: import.meta.env.REACT_APP_DEBUG === "true",
   
   // Default values
   defaults: {

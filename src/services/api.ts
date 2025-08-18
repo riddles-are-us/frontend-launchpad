@@ -268,8 +268,8 @@ export class LaunchpadAPI extends PlayerConvention {
             console.log('LaunchpadAPI: Querying all tokens via blockchain RPC...');
             
             // Get environment variables for blockchain RPC and contract address
-            const rpcUrl = process.env.REACT_APP_RPC_URL;
-            const rawContractAddress = process.env.REACT_APP_DEPOSIT_CONTRACT;
+            const rpcUrl = import.meta.env.REACT_APP_RPC_URL;
+            const rawContractAddress = import.meta.env.REACT_APP_DEPOSIT_CONTRACT;
             
             if (!rpcUrl || !rawContractAddress) {
                 console.error('LaunchpadAPI: Missing RPC URL or deposit contract address');
@@ -867,7 +867,7 @@ export default LaunchpadAPI;
 // Static method to get projects without authentication
 export const getPublicProjects = async (globalCounter?: number): Promise<IdoProjectData[]> => {
     try {
-        const serverUrl = process.env.REACT_APP_URL || "http://localhost:3000";
+        const serverUrl = import.meta.env.REACT_APP_URL || "http://localhost:3000";
         const url = `${serverUrl}/data/idos`;
         console.log('Public API: Fetching projects from URL:', url);
         
