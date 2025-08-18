@@ -161,7 +161,7 @@ const Projects = () => {
         <div className="container mx-auto px-4">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-4xl font-bold font-mono text-gradient-primary mb-4">
+            <h1 className="text-4xl font-bold font-mono text-cyber-blue mb-4">
               IDO PROJECTS
             </h1>
             <p className="text-lg font-mono text-muted-foreground mb-4">
@@ -186,7 +186,7 @@ const Projects = () => {
           </div>
 
           {/* Filters */}
-          <div className="card-pixel mb-8 p-6">
+          <div className="card-glass mb-8 p-6">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               {/* Search */}
               <div className="space-y-2">
@@ -197,7 +197,7 @@ const Projects = () => {
                   placeholder="Project name or symbol..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="input-pixel"
+                  className="input-cyber"
                 />
               </div>
 
@@ -207,7 +207,7 @@ const Projects = () => {
                   Status
                 </label>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="input-pixel">
+                  <SelectTrigger className="input-cyber">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -225,7 +225,7 @@ const Projects = () => {
                   Sort By
                 </label>
                 <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger className="input-pixel">
+                  <SelectTrigger className="input-cyber">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -246,7 +246,7 @@ const Projects = () => {
                   <Button
                     size="sm"
                     variant="outline"
-                    className="btn-pixel text-xs"
+                    className="btn-cyber-secondary text-xs"
                     onClick={() => setStatusFilter("ACTIVE")}
                   >
                     LIVE
@@ -254,7 +254,7 @@ const Projects = () => {
                   <Button
                     size="sm"
                     variant="outline"
-                    className="btn-pixel-secondary text-xs"
+                    className="btn-cyber-secondary text-xs"
                     onClick={() => setStatusFilter("PENDING")}
                   >
                     UPCOMING
@@ -266,7 +266,7 @@ const Projects = () => {
 
           {/* Stats Bar */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-            <div className="card-pixel p-4 text-center">
+            <div className="card-data p-4 text-center">
               <div className="text-2xl font-bold font-mono text-primary">
                 {sortedProjects.length}
               </div>
@@ -274,7 +274,7 @@ const Projects = () => {
                 Projects Found
               </div>
             </div>
-            <div className="card-pixel p-4 text-center">
+            <div className="card-data p-4 text-center">
               <div className="text-2xl font-bold font-mono text-success">
                 {sortedProjects.filter(p => p.status === 'ACTIVE').length}
               </div>
@@ -282,7 +282,7 @@ const Projects = () => {
                 Active IDOs
               </div>
             </div>
-            <div className="card-pixel p-4 text-center">
+            <div className="card-data p-4 text-center">
               <div className="text-2xl font-bold font-mono text-warning">
                 {sortedProjects.filter(p => p.status === 'PENDING').length}
               </div>
@@ -290,7 +290,7 @@ const Projects = () => {
                 Upcoming
               </div>
             </div>
-            <div className="card-pixel p-4 text-center">
+            <div className="card-data p-4 text-center">
               <div className="text-2xl font-bold font-mono text-accent">
                 {sortedProjects.filter(p => p.isOverSubscribed).length}
               </div>
@@ -330,7 +330,7 @@ const Projects = () => {
                   setStatusFilter("ALL");
                   setSortBy("NEWEST");
                 }}
-                className="btn-pixel"
+                className="btn-cyber"
               >
                 CLEAR FILTERS
               </Button>
@@ -340,7 +340,7 @@ const Projects = () => {
           {/* Load More */}
           {sortedProjects.length > 0 && (
             <div className="text-center">
-              <Button className="btn-pixel-accent px-8 py-3">
+              <Button className="btn-cyber px-8 py-3">
                 LOAD MORE PROJECTS
               </Button>
             </div>

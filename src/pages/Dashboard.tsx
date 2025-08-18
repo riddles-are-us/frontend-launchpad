@@ -217,7 +217,7 @@ const Dashboard = () => {
                   <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-2 overflow-hidden">
                     <img src="/favicon.ico" alt="ZKCross" className="w-10 h-10" />
                   </div>
-                  <h2 className="text-2xl font-mono font-bold text-gradient-primary mb-2">
+                  <h2 className="text-2xl font-mono font-bold text-secondary mb-2">
                     Wallet Connection Required
                   </h2>
                   <p className="text-muted-foreground font-mono mb-3">
@@ -511,7 +511,7 @@ const Dashboard = () => {
         <div className="container mx-auto px-4">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-4xl font-bold font-mono text-gradient-primary mb-4">
+            <h1 className="text-4xl font-bold font-mono text-cyber-teal mb-4">
               DASHBOARD
             </h1>
             <p className="text-lg font-mono text-muted-foreground mb-3">
@@ -584,7 +584,7 @@ const Dashboard = () => {
                     <CardHeader className="pb-3">
                       <div className="flex items-start justify-between">
                         <div>
-                          <CardTitle className="font-mono text-lg text-gradient-primary">
+                          <CardTitle className="font-mono text-lg text-secondary">
                             {project.tokenSymbol}
                           </CardTitle>
                           <p className="font-mono text-sm text-muted-foreground">
@@ -688,7 +688,7 @@ const Dashboard = () => {
               <Card className="card-pixel">
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <CardTitle className="font-mono text-xl text-gradient-secondary">
+                    <CardTitle className="font-mono text-xl text-secondary">
                       TRANSACTION HISTORY
                     </CardTitle>
                     {transactionHistoryData.length > 0 && (
@@ -701,7 +701,7 @@ const Dashboard = () => {
                 <CardContent>
                   <div className="space-y-4">
                     {paginatedTransactions.map((tx, index) => (
-                      <div key={tx.id} className="border border-border p-4 bg-card/50 animate-fadeIn" style={{ animationDelay: `${index * 0.1}s` }}>
+                      <div key={tx.id} className="border border-border p-4 bg-card/80 backdrop-blur-sm animate-fadeIn" style={{ animationDelay: `${index * 0.1}s` }}>
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center space-x-3">
                             <div className={`px-2 py-1 border font-mono text-xs font-semibold uppercase ${getTransactionTypeColor(tx.type)}`}>
@@ -791,7 +791,7 @@ const Dashboard = () => {
                 {/* ZKWASM Points Deposit */}
                 <Card className="card-pixel">
                   <CardHeader>
-                    <CardTitle className="font-mono text-lg text-gradient-primary">
+                    <CardTitle className="font-mono text-lg text-cyber-purple">
                       ZKWASM POINTS DEPOSIT
                     </CardTitle>
                   </CardHeader>
@@ -838,7 +838,7 @@ const Dashboard = () => {
                         Amount (ZKWASM Points)
                       </label>
                       <input 
-                        className="w-full input-pixel" 
+                        className="w-full input-cyber" 
                         placeholder="100000" 
                         type="text"
                         value={depositAmount}
@@ -854,7 +854,7 @@ const Dashboard = () => {
                       </div>
                     </div>
                     <Button 
-                      className="w-full btn-pixel"
+                      className="w-full btn-cyber"
                       onClick={handlePointsDeposit}
                       disabled={!depositAmount || parseInt(depositAmount || "0") <= 0 || loading}
                     >
@@ -866,7 +866,7 @@ const Dashboard = () => {
                 {/* Available Withdrawals */}
                 <Card className="card-pixel">
                   <CardHeader>
-                    <CardTitle className="font-mono text-lg text-gradient-primary">
+                    <CardTitle className="font-mono text-lg text-secondary">
                       AVAILABLE IDO TOKEN WITHDRAWALS
                     </CardTitle>
                   </CardHeader>
@@ -874,7 +874,7 @@ const Dashboard = () => {
                     {portfolioProjects
                       .filter(project => project.canWithdraw)
                       .map((project) => (
-                        <div key={project.projectId} className="border border-border p-4 bg-card/50">
+                        <div key={project.projectId} className="border border-border p-4 bg-card/80 backdrop-blur-sm">
                           <div className="flex items-center justify-between mb-2">
                             <div>
                               <span className="font-mono font-semibold text-primary">
@@ -909,7 +909,7 @@ const Dashboard = () => {
                 {/* ZKWASM Points Withdrawal */}
                 <Card className="card-pixel">
                   <CardHeader>
-                    <CardTitle className="font-mono text-lg text-gradient-secondary">
+                    <CardTitle className="font-mono text-lg text-secondary">
                       ZKWASM POINTS WITHDRAWAL
                     </CardTitle>
                   </CardHeader>
@@ -943,7 +943,7 @@ const Dashboard = () => {
                         Amount (ZKWASM Points)
                       </label>
                       <input 
-                        className="w-full input-pixel" 
+                        className="w-full input-cyber" 
                         placeholder="0" 
                         type="text"
                         value={withdrawAmount}
@@ -978,9 +978,9 @@ const Dashboard = () => {
 
       {/* Zero Points Dialog */}
       <Dialog open={showPointsDialog} onOpenChange={setShowPointsDialog}>
-        <DialogContent className="card-pixel max-w-md">
+        <DialogContent className="card-glass max-w-md">
           <DialogHeader>
-            <DialogTitle className="font-mono text-gradient-primary text-center">
+            <DialogTitle className="font-mono text-primary text-center">
               🪙 No ZKWASM Points Found
             </DialogTitle>
             <DialogDescription className="font-mono text-center space-y-3">
@@ -991,7 +991,7 @@ const Dashboard = () => {
           </DialogHeader>
           
           <div className="space-y-4 mt-4">
-            <div className="bg-muted/50 p-4 rounded-lg space-y-4">
+            <div className="card-data p-4 space-y-4">
               <h4 className="font-mono font-semibold text-primary">Option 1: Already have Points?</h4>
               <p className="font-mono text-xs text-muted-foreground">
                 If you already have ZKWASM Points in your wallet, deposit them to your Launchpad balance.
@@ -1001,13 +1001,13 @@ const Dashboard = () => {
                   setActiveTab("withdrawals");
                   setShowPointsDialog(false);
                 }}
-                className="w-full btn-pixel"
+                className="w-full btn-cyber"
               >
                 💳 DEPOSIT FROM WALLET
               </Button>
             </div>
             
-            <div className="bg-muted/50 p-4 rounded-lg space-y-4">
+            <div className="card-data p-4 space-y-4">
               <h4 className="font-mono font-semibold text-accent">Option 2: Get Points First</h4>
               <p className="font-mono text-xs text-muted-foreground">
                 Stake your tokens to earn ZKWASM Points, then withdraw to your wallet and deposit to Launchpad.
@@ -1019,7 +1019,7 @@ const Dashboard = () => {
                 onClick={() => setShowPointsDialog(false)}
                 className="block mt-4"
               >
-                <Button className="w-full btn-pixel-accent">
+                <Button className="w-full btn-cyber">
                   🚀 GO TO STAKING
                 </Button>
               </a>

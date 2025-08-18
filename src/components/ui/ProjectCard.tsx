@@ -84,16 +84,9 @@ const ProjectCard = ({ project, globalCounter, className = '', style, onInvest }
   };
 
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'ACTIVE':
-        return 'border-green-500 bg-green-500/10 text-green-500';
-      case 'PENDING':
-        return 'border-yellow-500 bg-yellow-500/10 text-yellow-500';
-      case 'ENDED':
-        return 'border-gray-500 bg-gray-500/10 text-gray-500';
-      default:
-        return 'border-primary bg-primary/10 text-primary';
-    }
+    // This function is now replaced by the badge-cyber CSS classes
+    // Status styling is handled in the badge-cyber.active, .pending, .ended classes
+    return 'badge-cyber';
   };
 
   const formatAmount = (amount: string) => {
@@ -226,21 +219,21 @@ const ProjectCard = ({ project, globalCounter, className = '', style, onInvest }
   };
 
   return (
-    <div className={`card-pixel group cursor-pointer relative ${className}`} style={style}>
+    <div className={`card-project group cursor-pointer relative hover-lift animate-fadeIn ${className}`} style={style}>
       {/* Header */}
-      <div className="flex items-start justify-between mb-4">
+      <div className="flex items-start justify-between mb-6">
         <div className="flex-1 mr-4">
-          <h3 className="font-mono font-bold text-lg text-gradient-primary">
+          <h3 className="font-semibold text-xl text-cyber-pink mb-1">
             {project.tokenSymbol}
           </h3>
-          <p className="font-mono text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground font-medium">
             {project.projectName}
           </p>
-          <p className="font-mono text-xs text-muted-foreground/80">
-            ID: {project.projectId}
+          <p className="text-xs text-muted-foreground/70 font-mono mt-1">
+            Project #{project.projectId}
           </p>
         </div>
-        <div className={`px-2 py-1 rounded border font-mono text-xs font-bold uppercase tracking-wider ${getStatusColor(project.status)}`}>
+        <div className={`badge-cyber ${project.status.toLowerCase()}`}>
           {project.status === 'ENDED' ? 'IDO ENDED' : project.status}
         </div>
       </div>
@@ -363,112 +356,114 @@ const ProjectCard = ({ project, globalCounter, className = '', style, onInvest }
       )}
 
       {/* Progress */}
-      <div className="space-y-2 mb-4">
+      <div className="space-y-3 mb-6">
         <div className="flex justify-between items-center">
-          <span className="font-mono text-sm text-muted-foreground">Progress</span>
-          <span className="font-mono text-sm font-semibold text-primary">
+          <span className="text-sm font-medium text-muted-foreground">Progress</span>
+          <span className="text-sm font-semibold text-cyber-teal">
             {calculateAccurateProgress(project.totalRaised, project.targetAmount).toFixed(2)}%
           </span>
         </div>
-        <div className="progress-pixel" style={{ '--progress': `${calculateAccurateProgress(project.totalRaised, project.targetAmount)}%` } as React.CSSProperties}>
+        <div className="progress-cyber" style={{ '--progress': `${calculateAccurateProgress(project.totalRaised, project.targetAmount)}%` } as React.CSSProperties}>
         </div>
       </div>
 
       {/* Stats */}
-      <div className="space-y-3 mb-4">
+      <div className="space-y-4 mb-6">
         {/* First row: Target & Raised */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-1">
-            <p className="font-mono text-xs text-foreground font-bold uppercase tracking-wider">Target</p>
-            <p className="font-mono text-sm text-primary">
-              {formatAmount(project.targetAmount)} points
+        <div className="grid grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <p className="text-xs font-semibold text-foreground uppercase tracking-wider">Target</p>
+            <p className="text-lg font-bold text-primary">
+              {formatAmount(project.targetAmount)}
             </p>
-            <p className="font-mono text-xs text-muted-foreground">
-              (~${(parseFloat(project.targetAmount) / 100000).toFixed(0)} USDT equivalent)
+            <p className="text-xs text-muted-foreground font-mono">
+              ~${(parseFloat(project.targetAmount) / 100000).toFixed(0)} USDT
             </p>
           </div>
-          <div className="space-y-1">
-            <p className="font-mono text-xs text-foreground font-bold uppercase tracking-wider">Raised</p>
-            <p className="font-mono text-sm text-accent">
-              {formatAmount(project.totalRaised)} points
+          <div className="space-y-2">
+            <p className="text-xs font-semibold text-foreground uppercase tracking-wider">Raised</p>
+            <p className="text-lg font-bold text-secondary">
+              {formatAmount(project.totalRaised)}
             </p>
-            <p className="font-mono text-xs text-muted-foreground">
-              (~${(parseFloat(project.totalRaised) / 100000).toFixed(0)} USDT equivalent)
+            <p className="text-xs text-muted-foreground font-mono">
+              ~${(parseFloat(project.totalRaised) / 100000).toFixed(0)} USDT
             </p>
           </div>
         </div>
         
         {/* Second row: Token Supply & Token Price */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-1">
-            <p className="font-mono text-xs text-foreground font-bold uppercase tracking-wider">Token Supply</p>
-            <p className="font-mono text-sm text-primary">
+        <div className="grid grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <p className="text-xs font-semibold text-foreground uppercase tracking-wider">Token Supply</p>
+            <p className="text-sm font-bold text-primary">
               {formatTokenSupply(project.tokenSupply)} {project.tokenSymbol}
             </p>
-            <p className="font-mono text-xs text-muted-foreground">
-              {formatTokenSupply((parseFloat(project.tokenSupply) * 0.8).toString())} for sale (80%)
-            </p>
-            <p className="font-mono text-xs text-muted-foreground">
-              {formatTokenSupply((parseFloat(project.tokenSupply) * 0.2).toString())} for liquidity (20%)
-            </p>
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground">
+                {formatTokenSupply((parseFloat(project.tokenSupply) * 0.8).toString())} sale (80%)
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {formatTokenSupply((parseFloat(project.tokenSupply) * 0.2).toString())} liquidity (20%)
+              </p>
+            </div>
           </div>
-          <div className="space-y-1">
-            <p className="font-mono text-xs text-foreground font-bold uppercase tracking-wider">Token Price</p>
-            <p className="font-mono text-sm text-secondary">
-              {calculateAndFormatTokenPrice(project.targetAmount, project.tokenSupply)} USDT
+          <div className="space-y-2">
+            <p className="text-xs font-semibold text-foreground uppercase tracking-wider">Token Price</p>
+            <p className="text-sm font-bold text-secondary">
+              ${calculateAndFormatTokenPrice(project.targetAmount, project.tokenSupply)}
             </p>
-            <p className="font-mono text-xs text-muted-foreground">
-              ({(parseFloat(calculateAndFormatTokenPrice(project.targetAmount, project.tokenSupply)) * 100000).toLocaleString()} points per token)
+            <p className="text-xs text-muted-foreground font-mono">
+              {(parseFloat(calculateAndFormatTokenPrice(project.targetAmount, project.tokenSupply)) * 100000).toLocaleString()} points
             </p>
           </div>
         </div>
         
         {/* Third row: Max Cap & Investors */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-1">
-            <p className="font-mono text-xs text-foreground font-bold uppercase tracking-wider">Max Individual Cap</p>
-            <p className="font-mono text-sm text-warning">
-              {formatAmount(project.maxIndividualCap)} points
+        <div className="grid grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <p className="text-xs font-semibold text-foreground uppercase tracking-wider">Max Cap</p>
+            <p className="text-sm font-bold text-warning">
+              {formatAmount(project.maxIndividualCap)}
             </p>
-            <p className="font-mono text-xs text-muted-foreground">
-              (~${(parseFloat(project.maxIndividualCap) / 100000).toFixed(0)} USDT equivalent)
+            <p className="text-xs text-muted-foreground font-mono">
+              ~${(parseFloat(project.maxIndividualCap) / 100000).toFixed(0)} USDT
             </p>
           </div>
-          <div className="space-y-1">
-            <p className="font-mono text-xs text-foreground font-bold uppercase tracking-wider">Investors</p>
-            <p className="font-mono text-sm text-secondary">
+          <div className="space-y-2">
+            <p className="text-xs font-semibold text-foreground uppercase tracking-wider">Investors</p>
+            <p className="text-lg font-bold text-secondary">
               {project.totalInvestors}
             </p>
           </div>
         </div>
         
         {/* Status row */}
-        <div className="pt-2 border-t border-border/50">
+        <div className="pt-4 border-t border-border/30">
           <div className="flex items-center justify-between">
-            <p className="font-mono text-xs text-muted-foreground uppercase">Status</p>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status</p>
             <div className="text-right">
               {project.isOverSubscribed ? (
                 <div>
                   <div className="flex items-center justify-end gap-2 mb-1">
-                    <div className="w-2 h-2 rounded-full bg-warning animate-pulse"></div>
-                    <p className="font-mono text-xs font-semibold text-warning uppercase">
+                    <div className="w-2 h-2 rounded-full bg-warning status-elite"></div>
+                    <p className="text-xs font-semibold text-warning uppercase tracking-wide">
                       Oversubscribed
                     </p>
                   </div>
-                  <p className="font-mono text-xs text-muted-foreground">
+                  <p className="text-xs text-muted-foreground font-mono">
                     {formatTimeRemaining(project.status, project.startTime, project.endTime)}
                   </p>
                 </div>
               ) : (
                 <div>
-                  <p className={`font-mono text-xs font-semibold uppercase ${
-                    project.status === 'ACTIVE' ? 'text-green-500' :
-                    project.status === 'PENDING' ? 'text-yellow-500' :
-                    'text-gray-500'
+                  <p className={`text-xs font-semibold uppercase tracking-wide ${
+                    project.status === 'ACTIVE' ? 'text-success' :
+                    project.status === 'PENDING' ? 'text-warning' :
+                    'text-muted-foreground'
                   }`}>
                     {project.status}
                   </p>
-                  <p className="font-mono text-xs text-muted-foreground mt-1">
+                  <p className="text-xs text-muted-foreground font-mono mt-1">
                     {formatTimeRemaining(project.status, project.startTime, project.endTime)}
                   </p>
                 </div>
@@ -479,23 +474,23 @@ const ProjectCard = ({ project, globalCounter, className = '', style, onInvest }
       </div>
 
       {/* Action Button */}
-      <div className="pt-4 border-t border-border">
+      <div className="pt-6 border-t border-border/30">
         {project.status === 'ACTIVE' && onInvest && (
           <Dialog open={isInvestDialogOpen} onOpenChange={setIsInvestDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="w-full btn-pixel">
+              <Button className="w-full btn-cyber">
                 INVEST NOW
               </Button>
             </DialogTrigger>
-            <DialogContent className="card-pixel">
+            <DialogContent className="card-glass backdrop-cyber">
               <DialogHeader>
-                <DialogTitle className="font-mono text-gradient-primary">
+                <DialogTitle className="text-xl font-semibold text-primary">
                   Invest in {project.tokenSymbol}
                 </DialogTitle>
               </DialogHeader>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="amount" className="font-mono text-sm">
+              <div className="space-y-6">
+                <div className="space-y-3">
+                  <Label htmlFor="amount" className="text-sm font-medium">
                     Investment Amount (Min 100K ZKWASM Points / ~$1 USDT equivalent)
                   </Label>
                   <Input
@@ -504,22 +499,22 @@ const ProjectCard = ({ project, globalCounter, className = '', style, onInvest }
                     placeholder="Enter amount..."
                     value={investAmount}
                     onChange={(e) => handleInvestAmountChange(e.target.value)}
-                    className="input-pixel"
+                    className="input-cyber"
                     min="1"
                     step="1"
                   />
-                  <div className="text-xs font-mono text-muted-foreground">
+                  <div className="text-xs text-muted-foreground">
                     💡 Range: 100,000 - {parseInt(project.maxIndividualCap).toLocaleString()} points
                   </div>
                   {investAmount && parseInt(investAmount) > 0 && (
-                    <div className="space-y-2">
-                      <div className="text-sm font-mono text-muted-foreground">
+                    <div className="space-y-3">
+                      <div className="text-sm text-muted-foreground">
                         ~${(parseInt(investAmount) / 100000).toFixed(2)} USDT equivalent
                       </div>
-                      <div className="bg-muted/20 p-3 rounded border">
-                        <div className="space-y-1">
-                          <p className="font-mono text-xs text-muted-foreground">Expected Tokens:</p>
-                          <p className="font-mono text-sm font-semibold text-primary">
+                      <div className="bg-card/50 p-4 rounded-lg border border-border/50 backdrop-blur-sm">
+                        <div className="space-y-2">
+                          <p className="text-xs text-muted-foreground">Expected Tokens:</p>
+                          <p className="text-sm font-semibold text-primary">
                             {calculateExpectedTokens(investAmount, project.targetAmount, project.tokenSupply)} {project.tokenSymbol}
                           </p>
                         </div>
@@ -527,18 +522,18 @@ const ProjectCard = ({ project, globalCounter, className = '', style, onInvest }
                     </div>
                   )}
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-3">
                   <Button 
                     onClick={handleInvest}
                     disabled={!investAmount || parseInt(investAmount || "0") < 100000 || parseInt(investAmount || "0") > parseInt(project.maxIndividualCap)}
-                    className="btn-pixel flex-1"
+                    className="btn-cyber flex-1"
                   >
                     CONFIRM INVESTMENT
                   </Button>
                   <Button 
                     variant="outline"
                     onClick={() => setIsInvestDialogOpen(false)}
-                    className="btn-pixel-secondary flex-1"
+                    className="btn-cyber-secondary flex-1"
                   >
                     CANCEL
                   </Button>
@@ -550,7 +545,7 @@ const ProjectCard = ({ project, globalCounter, className = '', style, onInvest }
         
         {project.status === 'PENDING' && (
           <Button 
-            className="w-full btn-pixel"
+            className="w-full btn-cyber-ghost"
             disabled
           >
             STARTS SOON
@@ -561,18 +556,18 @@ const ProjectCard = ({ project, globalCounter, className = '', style, onInvest }
           <>
             {tradableTokens.has(project.projectId) ? (
               <Button 
-                className="w-full btn-pixel"
+                className="w-full btn-cyber"
                 onClick={() => {
                   const tokenAddress = tradableTokens.get(project.projectId);
                   const uniswapUrl = `https://app.uniswap.org/swap?outputCurrency=${tokenAddress}&inputCurrency=0x55d398326f99059ff775485246999027b3197955&chain=bnb`;
                   window.open(uniswapUrl, '_blank');
                 }}
               >
-                TRADE
+                TRADE NOW
               </Button>
             ) : (
               <Button 
-                className="w-full btn-pixel"
+                className="w-full btn-cyber-ghost"
                 disabled
               >
                 ENDED
@@ -581,9 +576,6 @@ const ProjectCard = ({ project, globalCounter, className = '', style, onInvest }
           </>
         )}
       </div>
-
-      {/* Hover Effect Overlay */}
-      <div className="absolute inset-0 bg-gradient-primary opacity-0 group-hover:opacity-5 transition-opacity duration-300 pointer-events-none"></div>
     </div>
   );
 };

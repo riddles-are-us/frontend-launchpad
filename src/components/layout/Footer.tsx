@@ -8,8 +8,12 @@ const Footer = () => {
           {/* Brand */}
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
-              <div className="text-xl font-bold text-gradient-primary">ZKCross</div>
-              <div className="text-lg font-mono text-accent">Launchpad</div>
+              <img 
+                src="/zkc-logo-color-4x/zklogo-color2.png" 
+                alt="ZKCross" 
+                className="h-8 w-auto"
+              />
+              <div className="text-lg font-mono text-logo-purple">Launchpad</div>
             </div>
             <p className="font-mono text-sm text-muted-foreground">
               The ultimate IDO launchpad for Web3 Applications powered by ZKWASM

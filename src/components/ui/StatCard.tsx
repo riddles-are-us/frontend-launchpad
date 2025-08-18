@@ -22,13 +22,13 @@ const StatCard = ({ title, value, change, changeType = 'neutral', icon, classNam
   };
 
   return (
-    <div className={`card-pixel ${className}`}>
+    <div className={`card-data ${className}`}>
       <div className="flex items-start justify-between">
         <div className="space-y-2">
           <p className="font-mono text-sm text-muted-foreground uppercase tracking-wider">
             {title}
           </p>
-          <p className="text-2xl font-bold font-mono text-gradient-primary">
+          <p className="text-2xl font-bold font-mono text-cyber-blue">
             {value}
           </p>
           {change && (
