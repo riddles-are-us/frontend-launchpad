@@ -58,6 +58,7 @@ const Dashboard = () => {
 
 
   const [currentPage, setCurrentPage] = useState(1);
+  const [withdrawalsCurrentPage, setWithdrawalsCurrentPage] = useState(1);
   const [showPointsDialog, setShowPointsDialog] = useState(false);
   const [hasSeenPointsDialog, setHasSeenPointsDialog] = useState(false);
 
@@ -66,6 +67,7 @@ const Dashboard = () => {
     setHasSeenPointsDialog(false);
   }, []); // Empty dependency array means this runs only on mount
   const itemsPerPage = 10;
+  const withdrawalsItemsPerPage = 3;
 
   // Note: Time updates are now handled by LaunchpadContext's 5-second polling
   // Removed duplicate 5-second interval to avoid redundant updates
@@ -360,16 +362,13 @@ const Dashboard = () => {
       isOverSubscribed
     );
 
-    // Format token amounts
-    const tokensOwned = position.tokensWithdrawn ? "0" : Number(allocation.allocatedTokens).toLocaleString();
+    // Format token amounts - always show original amounts even when withdrawn
+    const tokensOwned = Number(allocation.allocatedTokens).toLocaleString();
     const refundAmount = Number(allocation.refundAmount).toString();
 
     // Calculate current value (for ended projects, use token price; for active, use invested amount)
     let currentValue = "0";
-    if (position.tokensWithdrawn) {
-      // If tokens have been withdrawn, current value is 0
-      currentValue = "0";
-    } else if (projectStatus === 'ENDED') {
+    if (projectStatus === 'ENDED') {
       // Use token price for ended projects
       const tokenPrice = parseFloat(projectData.tokenPrice);
       currentValue = (Number(allocation.allocatedTokens) * tokenPrice).toFixed(2);
@@ -402,7 +401,8 @@ const Dashboard = () => {
       gainLoss: `${gainLoss >= 0 ? '+' : ''}${gainLoss.toFixed(2)}`,
       gainLossPercent: `${gainLossPercent >= 0 ? '+' : ''}${gainLossPercent.toFixed(1)}%`,
       isOverSubscribed,
-      refundAmount
+      refundAmount,
+      tokensWithdrawn: position.tokensWithdrawn || false
     };
   });
   
@@ -584,9 +584,36 @@ const Dashboard = () => {
                     <CardHeader className="pb-3">
                       <div className="flex items-start justify-between">
                         <div>
-                          <CardTitle className="font-mono text-lg text-secondary">
-                            {project.tokenSymbol}
-                          </CardTitle>
+                          <div className="flex items-center gap-2">
+                            <CardTitle className="font-mono text-lg text-cyber-pink">
+                              {project.tokenSymbol}
+                            </CardTitle>
+                            {project.isOverSubscribed && (
+                              <div className="relative group">
+                                <div className="flex items-center gap-1 cursor-help">
+                                  <div className="w-4 h-4 bg-warning/20 rounded-full flex items-center justify-center">
+                                    <span className="text-warning text-xs font-bold">!</span>
+                                  </div>
+                                  <span className="text-warning text-xs font-mono underline decoration-warning/50 decoration-2 underline-offset-2">
+                                    oversubscribed
+                                  </span>
+                                </div>
+                                {/* Tooltip */}
+                                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-4 py-3 bg-card/95 backdrop-blur-md border border-border/50 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 w-80">
+                                  <div className="text-sm text-foreground font-medium leading-relaxed">
+                                    <p className="mb-2 font-semibold text-warning">Oversubscribed Project</p>
+                                    {parseFloat(project.refundAmount) > 0 && (
+                                      <p className="text-xs text-foreground/80">
+                                        Refund: {project.refundAmount} ZKWASM Points (~${(parseFloat(project.refundAmount) / 100000).toFixed(2)} USDT equivalent) will be returned to your launchpad balance when withdrawing tokens.
+                                      </p>
+                                    )}
+                                  </div>
+                                  {/* Tooltip Arrow */}
+                                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-border/50"></div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
                           <p className="font-mono text-sm text-muted-foreground">
                             {project.projectName}
                           </p>
@@ -607,21 +634,21 @@ const Dashboard = () => {
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <p className="font-mono text-xs text-foreground font-bold uppercase tracking-wider">Invested</p>
-                          <p className="font-mono text-sm">{parseFloat(project.invested).toLocaleString()} points</p>
+                          <p className="font-mono text-sm text-accent">{parseFloat(project.invested).toLocaleString()} points</p>
                           <p className="font-mono text-xs text-muted-foreground">~${(parseFloat(project.invested) / 100000).toFixed(2)} USDT equivalent</p>
                         </div>
                         <div>
                           <p className="font-mono text-xs text-foreground font-bold uppercase tracking-wider">Tokens</p>
-                          <p className={`font-mono text-sm break-all ${project.tokensOwned === "0" ? 'text-muted-foreground' : 'text-accent'}`}>
+                          <p className={`font-mono text-sm break-all ${project.tokensWithdrawn ? 'text-muted-foreground' : 'text-accent'}`}>
                             {project.tokensOwned}
-                            {project.tokensOwned === "0" && (
+                            {project.tokensWithdrawn && (
                               <span className="text-xs ml-1">(withdrawn)</span>
                             )}
                           </p>
                         </div>
                         <div>
                           <p className="font-mono text-xs text-foreground font-bold uppercase tracking-wider">Value</p>
-                          <p className="font-mono text-sm">{parseFloat(project.currentValue).toLocaleString()} points</p>
+                          <p className="font-mono text-sm text-accent">{parseFloat(project.currentValue).toLocaleString()} points</p>
                           <p className="font-mono text-xs text-muted-foreground">~${(parseFloat(project.currentValue) / 100000).toFixed(2)} USDT equivalent</p>
                         </div>
                         <div>
@@ -634,23 +661,6 @@ const Dashboard = () => {
                           </p>
                         </div>
                       </div>
-                      
-                      {/* Oversubscribed notice */}
-                      {project.isOverSubscribed && parseFloat(project.refundAmount) > 0 && (
-                        <div className="bg-warning/10 border border-warning p-3 rounded">
-                          <div className="flex items-start gap-2">
-                            <div className="w-2 h-2 rounded-full bg-warning mt-1 animate-pulse"></div>
-                            <div className="flex-1">
-                              <p className="font-mono text-xs font-semibold text-warning uppercase mb-1">
-                                Oversubscribed Project
-                              </p>
-                              <p className="font-mono text-xs text-warning/80">
-                                Refund: {project.refundAmount} ZKWASM Points (~${(parseFloat(project.refundAmount) / 100000).toFixed(2)} USDT equivalent) will be returned to your launchpad balance when withdrawing tokens.
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      )}
                       
                       <Button 
                         className={`w-full ${project.canWithdraw ? 'btn-pixel' : 'btn-pixel opacity-50'}`}
@@ -866,18 +876,33 @@ const Dashboard = () => {
                 {/* Available Withdrawals */}
                 <Card className="card-pixel">
                   <CardHeader>
-                    <CardTitle className="font-mono text-lg text-secondary">
-                      AVAILABLE IDO TOKEN WITHDRAWALS
-                    </CardTitle>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="font-mono text-lg text-secondary">
+                        AVAILABLE IDO TOKEN WITHDRAWALS
+                      </CardTitle>
+                      {portfolioProjects.filter(project => project.canWithdraw).length > withdrawalsItemsPerPage && (
+                        <div className="font-mono text-sm text-muted-foreground">
+                          Page {withdrawalsCurrentPage} of {Math.ceil(portfolioProjects.filter(project => project.canWithdraw).length / withdrawalsItemsPerPage)}
+                        </div>
+                      )}
+                    </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {portfolioProjects
-                      .filter(project => project.canWithdraw)
-                      .map((project) => (
+                    {(() => {
+                      const withdrawableProjects = portfolioProjects.filter(project => project.canWithdraw);
+                      const totalWithdrawals = withdrawableProjects.length;
+                      const totalWithdrawalPages = Math.ceil(totalWithdrawals / withdrawalsItemsPerPage);
+                      const startWithdrawalIndex = (withdrawalsCurrentPage - 1) * withdrawalsItemsPerPage;
+                      const endWithdrawalIndex = startWithdrawalIndex + withdrawalsItemsPerPage;
+                      const paginatedWithdrawals = withdrawableProjects.slice(startWithdrawalIndex, endWithdrawalIndex);
+                      
+                      return (
+                        <>
+                          {paginatedWithdrawals.map((project) => (
                         <div key={project.projectId} className="border border-border p-4 bg-card/80 backdrop-blur-sm">
                           <div className="flex items-center justify-between mb-2">
                             <div>
-                              <span className="font-mono font-semibold text-primary">
+                              <span className="font-mono font-semibold text-cyber-pink">
                                 {project.tokenSymbol}
                               </span>
                               <p className="font-mono text-xs text-muted-foreground/80">
@@ -889,13 +914,51 @@ const Dashboard = () => {
                             </span>
                           </div>
                           <Button 
-                            className="w-full btn-pixel text-sm"
+                            className="w-full btn-cyber text-sm"
                             onClick={() => handleWithdraw(project.projectId)}
                           >
                             WITHDRAW {project.tokenSymbol}
                           </Button>
                         </div>
-                      ))}
+                          ))}
+                          
+                          {/* Pagination for withdrawals */}
+                          {totalWithdrawalPages > 1 && (
+                            <div className="mt-6 flex justify-center">
+                              <Pagination>
+                                <PaginationContent>
+                                  <PaginationItem>
+                                    <PaginationPrevious 
+                                      onClick={() => setWithdrawalsCurrentPage(prev => Math.max(prev - 1, 1))}
+                                      className={withdrawalsCurrentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                                    />
+                                  </PaginationItem>
+                                  
+                                  {Array.from({ length: totalWithdrawalPages }, (_, i) => i + 1).map((page) => (
+                                    <PaginationItem key={page}>
+                                      <PaginationLink
+                                        onClick={() => setWithdrawalsCurrentPage(page)}
+                                        isActive={withdrawalsCurrentPage === page}
+                                        className="cursor-pointer font-mono"
+                                      >
+                                        {page}
+                                      </PaginationLink>
+                                    </PaginationItem>
+                                  ))}
+                                  
+                                  <PaginationItem>
+                                    <PaginationNext 
+                                      onClick={() => setWithdrawalsCurrentPage(prev => Math.min(prev + 1, totalWithdrawalPages))}
+                                      className={withdrawalsCurrentPage === totalWithdrawalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                                    />
+                                  </PaginationItem>
+                                </PaginationContent>
+                              </Pagination>
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
                     {portfolioProjects.filter(project => project.canWithdraw).length === 0 && (
                       <div className="text-center py-8">
                         <p className="font-mono text-muted-foreground">

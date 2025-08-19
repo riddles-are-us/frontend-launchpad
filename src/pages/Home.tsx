@@ -450,7 +450,7 @@ const Home = () => {
       <section className="py-16 px-4 bg-muted/30 backdrop-blur-sm">
         <div className="container mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-cyber-pink mb-4">
+            <h2 className="text-3xl font-bold text-cyber-teal mb-4">
               Live Activity
             </h2>
             <p className="text-lg text-foreground/90 font-medium">
@@ -467,7 +467,7 @@ const Home = () => {
                     <div className="text-sm">
                       <span className="text-secondary font-mono">{activity.user}</span>
                       <span className="text-muted-foreground"> {activity.action} {activity.amount} in </span>
-                      <span className="text-primary font-semibold">{activity.project}</span>
+                      <span className="text-cyber-pink font-semibold">{activity.project}</span>
                     </div>
                   </div>
                   <div className="text-xs text-muted-foreground font-mono">
