@@ -639,7 +639,7 @@ const Dashboard = () => {
                         </div>
                         <div>
                           <p className="font-mono text-xs text-foreground font-bold uppercase tracking-wider">Tokens</p>
-                          <p className={`font-mono text-sm break-all ${project.tokensWithdrawn ? 'text-muted-foreground' : 'text-accent'}`}>
+                          <p className="font-mono text-sm break-all text-accent">
                             {project.tokensOwned}
                             {project.tokensWithdrawn && (
                               <span className="text-xs ml-1">(withdrawn)</span>
@@ -717,7 +717,7 @@ const Dashboard = () => {
                             <div className={`px-2 py-1 border font-mono text-xs font-semibold uppercase ${getTransactionTypeColor(tx.type)}`}>
                               {tx.type}
                             </div>
-                            <span className="font-mono text-sm font-semibold text-primary">
+                            <span className="font-mono text-sm font-semibold text-cyber-pink">
                               {tx.project}
                             </span>
                           </div>
