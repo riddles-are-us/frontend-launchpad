@@ -546,37 +546,8 @@ export const LaunchpadProvider: React.FC<LaunchpadProviderProps> = ({ children, 
                 setTransactionHistory([]);
             }
 
-            // Query tradable tokens for ENDED projects
-            try {
-                console.log('LaunchpadContext: Querying tradable tokens...');
-                const tokens = await api.getAllTokens();
-                console.log('LaunchpadContext: Received tokens:', tokens);
-                
-                const newTradableTokens = new Map<string, string>();
-                
-                // For each ENDED project, check if its token is available for trading
-                // Match project ID with token array index
-                for (const project of projectsWithUpdatedStatus) {
-                    if (project.status === 'ENDED') {
-                        const projectIndex = parseInt(project.projectId);
-                        console.log(`LaunchpadContext: Checking ENDED project ${project.projectId} (index: ${projectIndex})`);
-                        
-                        // Find token by array index matching project ID
-                        if (projectIndex >= 0 && projectIndex < tokens.length) {
-                            const token = tokens[projectIndex];
-                            const tokenAddress = api.tokenUidToL1Address(token.token_uid);
-                            newTradableTokens.set(project.projectId, tokenAddress);
-                            console.log(`LaunchpadContext: Project ${project.projectId} token available for trading at ${tokenAddress}`);
-                        } else {
-                            console.log(`LaunchpadContext: No token found for project ${project.projectId} at index ${projectIndex}`);
-                        }
-                    }
-                }
-                
-                setTradableTokens(newTradableTokens);
-            } catch (tokenError) {
-                console.warn('LaunchpadContext: Failed to query tradable tokens:', tokenError);
-            }
+            // Load tradable tokens with smart caching (will auto-skip if no changes)
+            loadTradableTokensAsync(projectsWithUpdatedStatus);
 
             console.log('LaunchpadContext: Data refresh completed successfully');
         } catch (err) {
@@ -587,6 +558,85 @@ export const LaunchpadProvider: React.FC<LaunchpadProviderProps> = ({ children, 
         }
     }, [api, playerId, isConnected, l2Account]); // Removed userBalance from dependencies
 
+    // State to track ended projects for smart caching
+    const [lastEndedProjects, setLastEndedProjects] = useState<string>('');
+    
+    // Helper function to generate ended projects signature for caching
+    const getEndedProjectsSignature = useCallback((projects: ProjectData[]): string => {
+        const endedProjects = projects
+            .filter(p => p.status === 'ENDED')
+            .map(p => p.projectId)
+            .sort();
+        return endedProjects.join(',');
+    }, []);
+    
+    // Async function to load tradable tokens (non-blocking with smart caching)
+    const loadTradableTokensAsync = useCallback(async (projects: ProjectData[]) => {
+        if (!api) return;
+        
+        // Create signature of current ended projects
+        const currentEndedSignature = getEndedProjectsSignature(projects);
+        
+        // Skip if ended projects haven't changed
+        if (currentEndedSignature === lastEndedProjects) {
+            console.log('LaunchpadContext: ENDED projects unchanged, skipping token fetch (smart cache hit)');
+            return;
+        }
+        
+        // If no ended projects, clear tokens and update cache
+        if (currentEndedSignature === '') {
+            console.log('LaunchpadContext: No ENDED projects, clearing tradable tokens');
+            setTradableTokens(new Map());
+            setLastEndedProjects(currentEndedSignature);
+            return;
+        }
+        
+        console.log('LaunchpadContext: ENDED projects changed, fetching tokens...', {
+            previous: lastEndedProjects,
+            current: currentEndedSignature
+        });
+        
+        // Update cache signature immediately to prevent duplicate calls
+        setLastEndedProjects(currentEndedSignature);
+        
+        // Use setTimeout to make this truly non-blocking
+        setTimeout(async () => {
+            try {
+                console.log('LaunchpadContext: Async loading tradable tokens...');
+                const tokens = await api.getAllTokens();
+                console.log('LaunchpadContext: Async received tokens:', tokens);
+                
+                const newTradableTokens = new Map<string, string>();
+                
+                // For each ENDED project, check if its token is available for trading
+                // Match project ID with token array index
+                for (const project of projects) {
+                    if (project.status === 'ENDED') {
+                        const projectIndex = parseInt(project.projectId);
+                        console.log(`LaunchpadContext: Async checking ENDED project ${project.projectId} (index: ${projectIndex})`);
+                        
+                        // Find token by array index matching project ID
+                        if (projectIndex >= 0 && projectIndex < tokens.length) {
+                            const token = tokens[projectIndex];
+                            const tokenAddress = api.tokenUidToL1Address(token.token_uid);
+                            newTradableTokens.set(project.projectId, tokenAddress);
+                            console.log(`LaunchpadContext: Async project ${project.projectId} token available for trading at ${tokenAddress}`);
+                        } else {
+                            console.log(`LaunchpadContext: Async no token found for project ${project.projectId} at index ${projectIndex}`);
+                        }
+                    }
+                }
+                
+                setTradableTokens(newTradableTokens);
+                console.log('LaunchpadContext: Async tradable tokens loading completed');
+            } catch (tokenError) {
+                console.warn('LaunchpadContext: Async failed to query tradable tokens:', tokenError);
+                // On error, reset cache signature to allow retry on next change
+                setLastEndedProjects('');
+            }
+        }, 100); // Small delay to ensure main data loads first
+    }, [api, lastEndedProjects, getEndedProjectsSignature]);
+
     // Disconnect and cleanup
     const disconnect = useCallback(() => {
         setApi(null);
@@ -594,6 +644,8 @@ export const LaunchpadProvider: React.FC<LaunchpadProviderProps> = ({ children, 
         setUserPositions([]);
         setUserStats(null);
         setTransactionHistory([]);
+        setTradableTokens(new Map());
+        setLastEndedProjects(''); // Reset cache
         setError(null);
         setPlayerInstalled(false);
     }, []);
