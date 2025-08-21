@@ -375,7 +375,7 @@ const Home = () => {
                 onClick={() => navigate('/dashboard')}
               >
                 {walletConnected && isL2Connected ? 'View Dashboard' : 
-                 walletConnected ? 'Connect Launchpad' : 'Connect Wallet'}
+                 walletConnected ? 'Login to Launchpad' : 'Connect Wallet'}
               </Button>
             </div>
           </div>

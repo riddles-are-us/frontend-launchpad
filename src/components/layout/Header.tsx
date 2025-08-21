@@ -111,8 +111,8 @@ const Header = () => {
               }`}
             >
               <Wallet className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-              <span className="hidden sm:inline">{isConnected && isL2Connected ? 'CONNECTED' : 'CONNECT LAUNCHPAD'}</span>
-              <span className="sm:hidden">{isConnected && isL2Connected ? 'CONNECTED' : 'CONNECT'}</span>
+              <span className="hidden sm:inline">{isConnected && isL2Connected ? 'CONNECTED' : 'LOGIN TO LAUNCHPAD'}</span>
+              <span className="sm:hidden">{isConnected && isL2Connected ? 'CONNECTED' : 'LOGIN'}</span>
             </Button>
           </div>
         </div>

@@ -260,7 +260,7 @@ const Dashboard = () => {
                       }}
                       className="btn-pixel"
                     >
-                      CONNECT LAUNCHPAD
+                      LOGIN TO LAUNCHPAD
                     </Button>
                   )}
                   <Link to="/">
