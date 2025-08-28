@@ -91,18 +91,102 @@ const Dashboard = () => {
 
     setL1BalanceLoading(true);
     try {
-      // TODO: 实现实际的区块链余额获取
-      // 这里需要调用合适的区块链API来获取ZKWASM Points的L1余额
-      // 暂时设为0，待实际API集成
       console.log('Fetching L1 balance for address:', l1Account.address);
       
-      // 模拟API调用延迟
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const tokenContractAddress = import.meta.env.REACT_APP_TOKEN_CONTRACT;
+      const rpcUrl = import.meta.env.REACT_APP_RPC_URL;
       
-      // 临时设置为0，实际需要调用区块链API
-      setL1Balance("0");
+      if (!tokenContractAddress || !rpcUrl) {
+        console.error('Missing token contract address or RPC URL in environment variables');
+        setL1Balance("0");
+        return;
+      }
+
+      // ERC-20 balanceOf function call data
+      // balanceOf(address) = 0x70a08231 + padded address
+      const paddedAddress = l1Account.address.slice(2).padStart(64, '0');
+      const callData = `0x70a08231${paddedAddress}`;
+
+      const requestBody = {
+        jsonrpc: "2.0",
+        method: "eth_call",
+        params: [
+          {
+            to: tokenContractAddress,
+            data: callData
+          },
+          "latest"
+        ],
+        id: 1
+      };
+
+      console.log('RPC request:', requestBody);
+
+      // Add timeout to prevent hanging
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+      try {
+        const response = await fetch(rpcUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody),
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+      const data = await response.json();
+      console.log('RPC response:', data);
+
+      if (data.error) {
+        throw new Error(`RPC error: ${data.error.message}`);
+      }
+
+      if (!data.result) {
+        console.warn('No result in RPC response');
+        setL1Balance("0");
+        return;
+      }
+
+      // Convert hex result to decimal
+      // The result is in wei (18 decimals for ZKWASM token)
+      const balanceHex = data.result;
+      const balanceWei = BigInt(balanceHex);
+      
+      // Convert from wei to tokens (18 decimals)
+      // For display as "points", we keep full precision
+      const balanceTokens = Number(balanceWei) / Math.pow(10, 18);
+      
+      // Format as integer points (similar to how L2 balance is handled)
+      const balancePoints = Math.floor(balanceTokens).toString();
+      
+      console.log('L1 Balance:', {
+        hex: balanceHex,
+        wei: balanceWei.toString(),
+        tokens: balanceTokens,
+        points: balancePoints
+      });
+
+        setL1Balance(balancePoints);
+      } catch (fetchError) {
+        clearTimeout(timeoutId);
+        throw fetchError;
+      }
     } catch (error) {
       console.error('Failed to fetch L1 balance:', error);
+      
+      // Specific handling for timeout
+      if (error.name === 'AbortError') {
+        console.warn('L1 balance fetch timed out - this will not affect other operations');
+      }
+      
       setL1Balance("0");
     } finally {
       setL1BalanceLoading(false);
@@ -953,7 +1037,7 @@ const Dashboard = () => {
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <label className="font-mono text-sm text-muted-foreground uppercase">
-                          Amount (ZKWASM Points)
+                          Amount (ZKWASM Points: {parseFloat(l1Balance).toLocaleString()})
                         </label>
                         <Button
                           size="sm"
@@ -1129,7 +1213,7 @@ const Dashboard = () => {
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <label className="font-mono text-sm text-muted-foreground uppercase">
-                          Amount (ZKWASM Points)
+                          Amount (ZKWASM Points: {parseFloat(dashboardStats.balance).toLocaleString()})
                         </label>
                         <Button
                           size="sm"
