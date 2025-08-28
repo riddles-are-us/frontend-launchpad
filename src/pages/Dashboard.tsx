@@ -55,7 +55,8 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("portfolio");
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [depositAmount, setDepositAmount] = useState("");
-
+  const [l1Balance, setL1Balance] = useState("0");
+  const [l1BalanceLoading, setL1BalanceLoading] = useState(false);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [withdrawalsCurrentPage, setWithdrawalsCurrentPage] = useState(1);
@@ -80,6 +81,42 @@ const Dashboard = () => {
   // Use wallet context
   const { isConnected: walletConnected, l1Account, l2Account, deposit, connectL2 } = useWallet();
   const { openConnectModal } = useConnectModal();
+
+  // Fetch L1 balance from blockchain
+  const fetchL1Balance = async () => {
+    if (!walletConnected || !l1Account) {
+      setL1Balance("0");
+      return;
+    }
+
+    setL1BalanceLoading(true);
+    try {
+      // TODO: 实现实际的区块链余额获取
+      // 这里需要调用合适的区块链API来获取ZKWASM Points的L1余额
+      // 暂时设为0，待实际API集成
+      console.log('Fetching L1 balance for address:', l1Account.address);
+      
+      // 模拟API调用延迟
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // 临时设置为0，实际需要调用区块链API
+      setL1Balance("0");
+    } catch (error) {
+      console.error('Failed to fetch L1 balance:', error);
+      setL1Balance("0");
+    } finally {
+      setL1BalanceLoading(false);
+    }
+  };
+
+  // Fetch L1 balance when wallet connects
+  useEffect(() => {
+    if (walletConnected && l1Account) {
+      fetchL1Balance();
+    } else {
+      setL1Balance("0");
+    }
+  }, [walletConnected, l1Account]);
 
   // Check if user has zero points and show dialog - must be before early returns
   useEffect(() => {
@@ -797,6 +834,82 @@ const Dashboard = () => {
 
             {/* Wallet Tab */}
             <TabsContent value="withdrawals" className="space-y-6">
+              {/* Balance Overview - 3 separate cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                {/* Total Balance */}
+                <Card className="card-pixel">
+                  <CardContent className="p-4">
+                    <div className="text-center">
+                      <div className="text-xs font-mono text-muted-foreground uppercase mb-1">Total Balance</div>
+                      <div className="text-2xl font-bold font-mono text-cyber-blue">
+                        {(parseFloat(dashboardStats.balance) + parseFloat(l1Balance)).toLocaleString()}
+                      </div>
+                      <div className="text-xs font-mono text-muted-foreground">
+                        points (~${((parseFloat(dashboardStats.balance) + parseFloat(l1Balance)) / 100000).toFixed(2)} USDT)
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* L2 Balance (Launchpad) */}
+                <Card className="card-pixel">
+                  <CardContent className="p-4">
+                    <div className="text-center">
+                      <div className="flex items-center justify-center gap-2 mb-1">
+                        <span className="text-xs font-mono text-muted-foreground uppercase">Balance in Launchpad</span>
+                        <span className="text-xs px-2 py-0.5 bg-success/10 text-success border border-success/20 rounded font-mono">AVAILABLE</span>
+                      </div>
+                      <div className="text-2xl font-bold font-mono text-cyber-teal">
+                        {parseFloat(dashboardStats.balance).toLocaleString()}
+                      </div>
+                      <div className="text-xs font-mono text-muted-foreground">
+                        points (~${(parseFloat(dashboardStats.balance) / 100000).toFixed(2)} USDT)
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* L1 Balance (Wallet) */}
+                <Card className="card-pixel">
+                  <CardContent className="p-4">
+                    <div className="text-center">
+                      <div className="flex items-center justify-center gap-2 mb-1">
+                        <span className="text-xs font-mono text-muted-foreground uppercase">Balance on BNB Chain</span>
+                        <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary border border-primary/20 rounded font-mono">DEPOSITABLE</span>
+                      </div>
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="text-2xl font-bold font-mono text-cyber-pink">
+                          {l1BalanceLoading ? (
+                            <div className="flex items-center gap-2">
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-cyber-pink"></div>
+                              <span className="text-base">Loading...</span>
+                            </div>
+                          ) : (
+                            parseFloat(l1Balance).toLocaleString()
+                          )}
+                        </div>
+                        {!l1BalanceLoading && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={fetchL1Balance}
+                            className="h-6 w-6 p-0 text-primary hover:text-primary/80"
+                            title="Refresh L1 balance"
+                          >
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                          </Button>
+                        )}
+                      </div>
+                      <div className="text-xs font-mono text-muted-foreground">
+                        points (~${(parseFloat(l1Balance) / 100000).toFixed(2)} USDT)
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* ZKWASM Points Deposit */}
                 <Card className="card-pixel">
@@ -806,16 +919,10 @@ const Dashboard = () => {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <label className="font-mono text-sm text-muted-foreground uppercase">
-                        Current Balance
-                      </label>
-                      <div className="text-2xl font-bold font-mono text-accent">
-                        {dashboardStats.balance} points
-                      </div>
-                      <div className="text-sm font-mono text-muted-foreground">
-                        (~${(parseFloat(dashboardStats.balance) / 100000).toFixed(2)} USDT equivalent)
-                      </div>
+                    <div className="bg-info/5 border border-info/20 rounded p-3 mb-4">
+                      <p className="font-mono text-xs text-info">
+                        💡 Deposit ZKWASM Points on BNB Chain from your wallet to your Launchpad balance for investing in IDO projects
+                      </p>
                     </div>
                     <div className="space-y-2">
                       <label className="font-mono text-sm text-muted-foreground uppercase">
@@ -844,9 +951,20 @@ const Dashboard = () => {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <label className="font-mono text-sm text-muted-foreground uppercase">
-                        Amount (ZKWASM Points)
-                      </label>
+                      <div className="flex items-center justify-between">
+                        <label className="font-mono text-sm text-muted-foreground uppercase">
+                          Amount (ZKWASM Points)
+                        </label>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setDepositAmount(l1Balance)}
+                          className="h-6 px-2 py-1 text-xs font-mono font-semibold text-primary hover:text-primary/80 hover:bg-primary/10 border border-primary/20 hover:border-primary/30"
+                          disabled={parseFloat(l1Balance) <= 0}
+                        >
+                          MAX
+                        </Button>
+                      </div>
                       <input 
                         className="w-full input-cyber" 
                         placeholder="100000" 
@@ -977,18 +1095,12 @@ const Dashboard = () => {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <label className="font-mono text-sm text-muted-foreground uppercase">
-                        Available Balance
-                      </label>
-                      <div className="text-2xl font-bold font-mono text-accent">
-                        {dashboardStats.balance} points
-                      </div>
-                      <div className="text-sm font-mono text-muted-foreground">
-                        (~${(parseFloat(dashboardStats.balance) / 100000).toFixed(2)} USDT equivalent)
-                      </div>
+                    <div className="bg-info/5 border border-info/20 rounded p-3 mb-4">
+                      <p className="font-mono text-xs text-info">
+                        ⚡ Withdraw ZKWASM Points from your Launchpad balance to your connected wallet address on BNB Chain
+                      </p>
                     </div>
-                                        <div className="space-y-2">
+                    <div className="space-y-2">
                       <label className="font-mono text-sm text-muted-foreground uppercase">
                         Withdrawal Address
                       </label>
@@ -996,15 +1108,39 @@ const Dashboard = () => {
                         <p className="font-mono text-sm text-foreground break-all">
                           {l1Account?.address || 'Connect wallet to see address'}
                         </p>
+                        {l1Account?.address && (
+                          <a 
+                            href={`https://bscscan.com/address/${l1Account.address}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 font-mono text-xs text-primary hover:text-primary/80 transition-colors mt-1"
+                          >
+                            View in BSC Scan
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                          </a>
+                        )}
                         <p className="font-mono text-xs text-muted-foreground mt-1">
                           ZKWASM Points will be withdrawn to your connected wallet
                         </p>
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <label className="font-mono text-sm text-muted-foreground uppercase">
-                        Amount (ZKWASM Points)
-                      </label>
+                      <div className="flex items-center justify-between">
+                        <label className="font-mono text-sm text-muted-foreground uppercase">
+                          Amount (ZKWASM Points)
+                        </label>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setWithdrawAmount(dashboardStats.balance)}
+                          className="h-6 px-2 py-1 text-xs font-mono font-semibold text-primary hover:text-primary/80 hover:bg-primary/10 border border-primary/20 hover:border-primary/30"
+                          disabled={parseFloat(dashboardStats.balance) <= 0}
+                        >
+                          MAX
+                        </Button>
+                      </div>
                       <input 
                         className="w-full input-cyber" 
                         placeholder="0" 
@@ -1017,6 +1153,9 @@ const Dashboard = () => {
                       />
                       <div className="text-xs font-mono text-muted-foreground">
                         ~${(parseFloat(withdrawAmount || "0") / 100000).toFixed(2)} USDT equivalent
+                        <div className="mt-1 text-info">
+                          ⚡ Minimum withdrawal: 1 point (~$0.00001 USDT)
+                        </div>
                         {withdrawAmount && parseInt(withdrawAmount) > parseInt(dashboardStats.balance) && (
                           <div className="text-destructive mt-1">
                             ⚠️ Amount exceeds available balance ({dashboardStats.balance} points)
