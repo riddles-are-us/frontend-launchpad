@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getProjectDescription } from "../../utils/project-descriptions";
 import { useLaunchpad } from "../../contexts/LaunchpadContext";
+import { useWallet } from "../../contexts/WalletContext";
 
 interface ProjectCardProps {
   project: {
@@ -32,7 +33,8 @@ interface ProjectCardProps {
 
 const ProjectCard = ({ project, globalCounter, className = '', style, onInvest }: ProjectCardProps) => {
   const [investAmount, setInvestAmount] = useState("");
-  const { tradableTokens } = useLaunchpad();
+  const { tradableTokens, userStats } = useLaunchpad();
+  const { isL2Connected, connectL2 } = useWallet();
   const [copied, setCopied] = useState(false);
 
   // Input validation function for investment amount
@@ -489,55 +491,85 @@ const ProjectCard = ({ project, globalCounter, className = '', style, onInvest }
                 </DialogTitle>
               </DialogHeader>
               <div className="space-y-6">
-                <div className="space-y-3">
-                  <Label htmlFor="amount" className="text-sm font-medium">
-                    Investment Amount (Min 100K ZKWASM Points / ~$1 USDT equivalent)
-                  </Label>
-                  <Input
-                    id="amount"
-                    type="text"
-                    placeholder="Enter amount..."
-                    value={investAmount}
-                    onChange={(e) => handleInvestAmountChange(e.target.value)}
-                    className="input-cyber"
-                    min="1"
-                    step="1"
-                  />
-                  <div className="text-xs text-muted-foreground">
-                    💡 Range: 100,000 - {parseInt(project.maxIndividualCap).toLocaleString()} points
+                {/* Points Balance Display */}
+                <div className="bg-card/30 p-4 rounded-lg border border-border/50 backdrop-blur-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-muted-foreground">Your Points Balance:</span>
+                    <span className="text-lg font-bold text-primary">
+                      {userStats?.balance ? parseInt(userStats.balance).toLocaleString() : '0'} 
+                      <span className="text-sm text-muted-foreground ml-1">
+                        (~${userStats?.balance ? (parseInt(userStats.balance) / 100000).toFixed(2) : '0.00'} USDT)
+                      </span>
+                    </span>
                   </div>
-                  {investAmount && parseInt(investAmount) > 0 && (
-                    <div className="space-y-3">
-                      <div className="text-sm text-muted-foreground">
-                        ~${(parseInt(investAmount) / 100000).toFixed(2)} USDT equivalent
-                      </div>
-                      <div className="bg-card/50 p-4 rounded-lg border border-border/50 backdrop-blur-sm">
-                        <div className="space-y-2">
-                          <p className="text-xs text-muted-foreground">Expected Tokens:</p>
-                          <p className="text-sm font-semibold text-primary">
-                            {calculateExpectedTokens(investAmount, project.targetAmount, project.tokenSupply)} {project.tokenSymbol}
-                          </p>
+                </div>
+
+                {/* L2 Login Prompt or Investment Form */}
+                {!isL2Connected ? (
+                  <div className="text-center space-y-4">
+                    <div className="bg-warning/10 p-4 rounded-lg border border-warning/30">
+                      <p className="text-sm text-warning mb-3">
+                        Please connect to Launchpad to start investing
+                      </p>
+                      <Button 
+                        onClick={connectL2}
+                        className="btn-cyber w-full"
+                      >
+                        CONNECT LAUNCHPAD
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <Label htmlFor="amount" className="text-sm font-medium">
+                      Investment Amount (Min 100K ZKWASM Points / ~$1 USDT equivalent)
+                    </Label>
+                    <Input
+                      id="amount"
+                      type="text"
+                      placeholder="Enter amount..."
+                      value={investAmount}
+                      onChange={(e) => handleInvestAmountChange(e.target.value)}
+                      className="input-cyber"
+                      min="1"
+                      step="1"
+                    />
+                    <div className="text-xs text-muted-foreground">
+                      💡 Range: 100,000 - {parseInt(project.maxIndividualCap).toLocaleString()} points
+                    </div>
+                    {investAmount && parseInt(investAmount) > 0 && (
+                      <div className="space-y-3">
+                        <div className="text-sm text-muted-foreground">
+                          ~${(parseInt(investAmount) / 100000).toFixed(2)} USDT equivalent
+                        </div>
+                        <div className="bg-card/50 p-4 rounded-lg border border-border/50 backdrop-blur-sm">
+                          <div className="space-y-2">
+                            <p className="text-xs text-muted-foreground">Expected Tokens:</p>
+                            <p className="text-sm font-semibold text-primary">
+                              {calculateExpectedTokens(investAmount, project.targetAmount, project.tokenSupply)} {project.tokenSymbol}
+                            </p>
+                          </div>
                         </div>
                       </div>
+                    )}
+                    <div className="flex gap-3">
+                      <Button 
+                        onClick={handleInvest}
+                        disabled={!investAmount || parseInt(investAmount || "0") < 100000 || parseInt(investAmount || "0") > parseInt(project.maxIndividualCap)}
+                        className="btn-cyber flex-1"
+                      >
+                        CONFIRM INVESTMENT
+                      </Button>
+                      <Button 
+                        variant="outline"
+                        onClick={() => setIsInvestDialogOpen(false)}
+                        className="btn-cyber-secondary flex-1"
+                      >
+                        CANCEL
+                      </Button>
                     </div>
-                  )}
-                </div>
-                <div className="flex gap-3">
-                  <Button 
-                    onClick={handleInvest}
-                    disabled={!investAmount || parseInt(investAmount || "0") < 100000 || parseInt(investAmount || "0") > parseInt(project.maxIndividualCap)}
-                    className="btn-cyber flex-1"
-                  >
-                    CONFIRM INVESTMENT
-                  </Button>
-                  <Button 
-                    variant="outline"
-                    onClick={() => setIsInvestDialogOpen(false)}
-                    className="btn-cyber-secondary flex-1"
-                  >
-                    CANCEL
-                  </Button>
-                </div>
+                  </div>
+                )}
               </div>
             </DialogContent>
           </Dialog>
