@@ -335,13 +335,13 @@ const Home = () => {
         <div className="container mx-auto text-center relative z-10">
           <div className="space-y-8 animate-fadeIn">
             <h1 className="text-5xl md:text-7xl font-bold text-gradient-primary">
-              zkCross Launchpad
+              ZKCross Launchpad
             </h1>
             <p className="text-xl md:text-2xl text-cyber-blue max-w-3xl mx-auto font-medium">
               The Next-Generation IDO Platform
             </p>
             <p className="text-lg text-foreground/80 max-w-2xl mx-auto leading-relaxed">
-              Invest in cutting-edge zkCross projects with{" "}🪙
+              Invest in cutting-edge ZKCross projects with{" "}🪙
               <span className="relative inline-flex items-center gap-1 group">
                 <span className="text-cyber-pink underline decoration-cyber-pink/50 decoration-2 underline-offset-4 cursor-pointer transition-all duration-200 hover:decoration-cyber-pink group-hover:text-cyber-pink/90">
                   ZKWASM Points
