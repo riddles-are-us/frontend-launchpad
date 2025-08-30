@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { getProjectDescription } from "../../utils/project-descriptions";
 import { useLaunchpad } from "../../contexts/LaunchpadContext";
 import { useWallet } from "../../contexts/WalletContext";
+import { toast } from "@/hooks/use-toast";
 
 interface ProjectCardProps {
   project: {
@@ -34,7 +35,7 @@ interface ProjectCardProps {
 const ProjectCard = ({ project, globalCounter, className = '', style, onInvest }: ProjectCardProps) => {
   const [investAmount, setInvestAmount] = useState("");
   const { tradableTokens, userStats } = useLaunchpad();
-  const { isL2Connected, connectL2 } = useWallet();
+  const { isConnected, isL2Connected, connectL2 } = useWallet();
   const [copied, setCopied] = useState(false);
 
   // Input validation function for investment amount
@@ -478,12 +479,24 @@ const ProjectCard = ({ project, globalCounter, className = '', style, onInvest }
       {/* Action Button */}
       <div className="pt-6 border-t border-border/30">
         {project.status === 'ACTIVE' && onInvest && (
-          <Dialog open={isInvestDialogOpen} onOpenChange={setIsInvestDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="w-full btn-cyber">
-                INVEST NOW
-              </Button>
-            </DialogTrigger>
+          <>
+            <Button 
+              className="w-full btn-cyber"
+              onClick={() => {
+                if (!isConnected) {
+                  toast({
+                    title: "Wallet Not Connected",
+                    description: "Please connect your wallet first to invest",
+                    variant: "destructive"
+                  });
+                  return;
+                }
+                setIsInvestDialogOpen(true);
+              }}
+            >
+              INVEST NOW
+            </Button>
+            <Dialog open={isInvestDialogOpen} onOpenChange={setIsInvestDialogOpen}>
             <DialogContent className="card-glass backdrop-cyber">
               <DialogHeader>
                 <DialogTitle className="text-xl font-semibold text-primary">
@@ -572,7 +585,8 @@ const ProjectCard = ({ project, globalCounter, className = '', style, onInvest }
                 )}
               </div>
             </DialogContent>
-          </Dialog>
+            </Dialog>
+          </>
         )}
         
         {project.status === 'PENDING' && (
