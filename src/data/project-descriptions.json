@@ -1,10 +1,16 @@
 {
   "descriptions": {
     "1": {
-      "description": "ABC Token is a ZKWASM test project focusing on automated token launch and market making on BNB Chain, it offers users seamless trading experiences with minimal gas fees and maximum security.",
+      "description": "$ABC Token is a ZKWASM test project focusing on automated token launch and market making on BNB Chain, it offers users seamless trading experiences with minimal gas fees and maximum security.",
       "website": "",
       "twitter": "",
       "telegram": ""
+    },
+    "2": {
+      "description": "$DPS Token",
+      "website": "",
+      "twitter": "https://x.com/0xdpsidle",
+      "telegram": "https://t.me/DelphinusLabOfficial"
     }
   }
 }
