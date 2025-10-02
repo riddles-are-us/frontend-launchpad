@@ -49,6 +49,7 @@ interface PortfolioProject {
   gainLossPercent: string;
   isOverSubscribed: boolean;
   refundAmount: string;
+  tokensWithdrawn: boolean;
 }
 
 const Dashboard = () => {
@@ -449,22 +450,26 @@ const Dashboard = () => {
         gainLoss: "+0.00",
         gainLossPercent: "+0%",
         isOverSubscribed: false,
-        refundAmount: "0"
+        refundAmount: "0",
+        tokensWithdrawn: position.tokensWithdrawn || false
       };
     }
 
-    // Calculate correct project status using globalCounter
+    // Calculate correct project status using globalCounter and progress
     let projectStatus: 'PENDING' | 'ACTIVE' | 'ENDED' = 'ENDED';
     if (globalCounter) {
       const startTime = parseInt(projectData.startTime);
       const endTime = parseInt(projectData.endTime);
+      const progress = projectData.progress || 0;
       
       if (globalCounter < startTime) {
         projectStatus = 'PENDING';
       } else if (globalCounter < endTime) {
         projectStatus = 'ACTIVE';
       } else {
-        projectStatus = 'ENDED';
+        // ENDED only if time is up AND progress reached 100%
+        // Otherwise keep it ACTIVE (can't withdraw yet)
+        projectStatus = progress >= 100 ? 'ENDED' : 'ACTIVE';
       }
     }
 

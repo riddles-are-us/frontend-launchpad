@@ -724,6 +724,10 @@ export class LaunchpadAPI extends PlayerConvention {
     }
 
     private formatUserPosition(position: any): UserProjectPosition {
+        // Note: This method can only determine basic status from time
+        // For accurate ENDED status (requires progress >= 100%), 
+        // the status should be recalculated in the consuming component (e.g., Dashboard)
+        // where both project data and position data are available
         const currentTime = BigInt(Math.floor(Date.now() / 1000));
         const endTime = BigInt(position.endTime || '0');
         
@@ -731,11 +735,15 @@ export class LaunchpadAPI extends PlayerConvention {
         if (currentTime < endTime) {
             status = 'ACTIVE';
         } else {
+            // Mark as ENDED here, but note that this is preliminary
+            // The actual ENDED status should consider progress >= 100%
+            // This will be recalculated in Dashboard with full project data
             status = 'ENDED';
         }
 
         return {
             ...position,
+            // canWithdraw will be recalculated in Dashboard with accurate status
             canWithdraw: status === 'ENDED' && !position.tokensWithdrawn,
             status
         };
