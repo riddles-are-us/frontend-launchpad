@@ -1,12 +1,10 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { LaunchpadAPI, createLaunchpadAPI } from '../services/api';
 import { useWallet } from './WalletContext';
-import { toast } from '@/hooks/use-toast';
 import { bnToHexLe } from 'delphinus-curves/src/altjubjub';
 import { LeHexBN } from 'zkwasm-minirollup-rpc';
 import type {
     LaunchpadContextType,
-    WalletInfo,
     IdoProjectData,
     UserProjectPosition,
     UserStats,
@@ -449,25 +447,32 @@ export const LaunchpadProvider: React.FC<LaunchpadProviderProps> = ({ children, 
             const allProjects = await api.getAllProjects();
             console.log('LaunchpadContext: Received projects:', allProjects);
             
-            // Update project status based on global counter
+            // Update project status based on global counter and progress
             const projectsWithUpdatedStatus = allProjects.map(project => {
                 let status: 'PENDING' | 'ACTIVE' | 'ENDED';
                 const startTime = parseInt(project.startTime);
                 const endTime = parseInt(project.endTime);
+                const progress = project.progress || 0;
                 
                 if (globalCounter < startTime) {
                     status = 'PENDING';
                 } else if (globalCounter < endTime) {
                     status = 'ACTIVE';
                 } else {
-                    status = 'ENDED';
+                    // ENDED only if time is up AND progress reached 100%
+                    // Otherwise keep it ACTIVE
+                    status = progress >= 100 ? 'ENDED' : 'ACTIVE';
                 }
                 
                 console.log(`LaunchpadContext: Project ${project.projectId} status calculation:`, {
                     globalCounter,
                     startTime,
                     endTime,
-                    status
+                    progress,
+                    status,
+                    reason: globalCounter >= endTime 
+                        ? (progress >= 100 ? 'Time up + 100% funded = ENDED' : 'Time up but < 100% = Still ACTIVE')
+                        : (globalCounter < startTime ? 'Not started yet' : 'In progress')
                 });
                 
                 return {
@@ -562,7 +567,7 @@ export const LaunchpadProvider: React.FC<LaunchpadProviderProps> = ({ children, 
     const [lastEndedProjects, setLastEndedProjects] = useState<string>('');
     
     // Helper function to generate ended projects signature for caching
-    const getEndedProjectsSignature = useCallback((projects: ProjectData[]): string => {
+    const getEndedProjectsSignature = useCallback((projects: IdoProjectData[]): string => {
         const endedProjects = projects
             .filter(p => p.status === 'ENDED')
             .map(p => p.projectId)
@@ -571,7 +576,7 @@ export const LaunchpadProvider: React.FC<LaunchpadProviderProps> = ({ children, 
     }, []);
     
     // Async function to load tradable tokens (non-blocking with smart caching)
-    const loadTradableTokensAsync = useCallback(async (projects: ProjectData[]) => {
+    const loadTradableTokensAsync = useCallback(async (projects: IdoProjectData[]) => {
         if (!api) return;
         
         // Create signature of current ended projects

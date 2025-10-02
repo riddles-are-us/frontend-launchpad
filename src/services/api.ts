@@ -656,6 +656,9 @@ export class LaunchpadAPI extends PlayerConvention {
         const totalRaised = BigInt(project.totalRaised);
         const targetAmount = BigInt(project.targetAmount);
 
+        // Calculate progress first (needed for status determination)
+        const progress = targetAmount > 0n ? Number((totalRaised * 100n) / targetAmount) : 0;
+
         let status: 'PENDING' | 'ACTIVE' | 'ENDED';
         if (globalCounter !== undefined) {
             // Use counter-based status calculation
@@ -667,7 +670,9 @@ export class LaunchpadAPI extends PlayerConvention {
             } else if (globalCounter < endTime) {
                 status = 'ACTIVE';
             } else {
-                status = 'ENDED';
+                // ENDED only if time is up AND progress reached 100%
+                // Otherwise keep it ACTIVE
+                status = progress >= 100 ? 'ENDED' : 'ACTIVE';
             }
         } else {
             // Fallback to time-based calculation if counter not available
@@ -680,11 +685,11 @@ export class LaunchpadAPI extends PlayerConvention {
             } else if (currentTime < endTime) {
                 status = 'ACTIVE';
             } else {
-                status = 'ENDED';
+                // ENDED only if time is up AND progress reached 100%
+                // Otherwise keep it ACTIVE
+                status = progress >= 100 ? 'ENDED' : 'ACTIVE';
             }
         }
-
-        const progress = targetAmount > 0n ? Number((totalRaised * 100n) / targetAmount) : 0;
         const isOverSubscribed = totalRaised > targetAmount;
         const tokenPrice = this.calculateTokenPrice(targetAmount, BigInt(project.tokenSupply));
 
@@ -898,6 +903,9 @@ const formatPublicProjectData = (project: any, globalCounter?: number): IdoProje
     const totalRaised = BigInt(project.totalRaised);
     const targetAmount = BigInt(project.targetAmount);
 
+    // Calculate progress first (needed for status determination)
+    const progress = targetAmount > 0n ? Number((totalRaised * 100n) / targetAmount) : 0;
+
     let status: 'PENDING' | 'ACTIVE' | 'ENDED';
     if (globalCounter !== undefined) {
         // Use counter-based status calculation
@@ -909,7 +917,9 @@ const formatPublicProjectData = (project: any, globalCounter?: number): IdoProje
         } else if (globalCounter < endTime) {
             status = 'ACTIVE';
         } else {
-            status = 'ENDED';
+            // ENDED only if time is up AND progress reached 100%
+            // Otherwise keep it ACTIVE
+            status = progress >= 100 ? 'ENDED' : 'ACTIVE';
         }
     } else {
         // Fallback to time-based calculation if counter not available
@@ -922,11 +932,11 @@ const formatPublicProjectData = (project: any, globalCounter?: number): IdoProje
         } else if (currentTime < endTime) {
             status = 'ACTIVE';
         } else {
-            status = 'ENDED';
+            // ENDED only if time is up AND progress reached 100%
+            // Otherwise keep it ACTIVE
+            status = progress >= 100 ? 'ENDED' : 'ACTIVE';
         }
     }
-
-    const progress = targetAmount > 0n ? Number((totalRaised * 100n) / targetAmount) : 0;
     const isOverSubscribed = totalRaised > targetAmount;
     const tokenPrice = calculatePublicTokenPrice(targetAmount, BigInt(project.tokenSupply));
 
